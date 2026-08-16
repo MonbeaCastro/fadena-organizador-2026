@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 FADENA Organizador - Licenciatura en Ciberdefensa (2do Cuatrimestre)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        arg: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- jsPDF para generar una hoja A4 real -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-full flex flex-col transition-colors duration-200">
+
+    <header class="bg-gradient-to-r from-arg-950 via-sky-950 to-arg-950 text-white shadow-xl border-b border-arg-700/40">
+        <div class="max-w-7xl mx-auto px-4 py-5 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3.5">
+                <div class="bg-gradient-to-br from-sky-400 to-arg-700 p-3.5 rounded-2xl shadow-lg border border-sky-300/30 flex items-center justify-center text-white text-2xl font-bold">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] tracking-widest uppercase bg-arg-700/50 text-sky-200 px-2 py-0.5 rounded border border-sky-400/30 font-bold">FADENA • Defensa Nacional</span>
+                    </div>
+                    <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white mt-0.5">Licenciatura en Ciberdefensa</h1>
+                    <p class="text-xs text-sky-200/80">2do Cuatrimestre 2026 • <span class="text-sky-300 font-semibold">Organizador Académico</span></p>
+                </div>
+            </div>
+            
+            <!-- Quick navigation & Actions -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="px-4 py-2 rounded-xl text-sm font-medium bg-sky-500 text-white transition shadow-sm hover:bg-sky-400">
+                    <i class="fa-solid fa-chart-pie mr-2"></i> Dashboard
+                </button>
+                <button onclick="switchTab('semanas')" id="btn-tab-semanas" class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-900/80 text-slate-300 hover:bg-slate-800 transition border border-slate-700">
+                    <i class="fa-solid fa-calendar-week mr-2"></i> Seguimiento Semanal
+                </button>
+                <button onclick="switchTab('tps')" id="btn-tab-tps" class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-900/80 text-slate-300 hover:bg-slate-800 transition border border-slate-700">
+                    <i class="fa-solid fa-list-check mr-2"></i> TPs & Exámenes
+                </button>
+                <div id="firebase-auth-box" class="flex items-center gap-2 px-2.5 py-2 bg-slate-900/80 border border-slate-700 rounded-xl">
+                    <span id="firebase-status-dot" class="w-2.5 h-2.5 rounded-full bg-slate-500" title="Estado de Firebase"></span>
+                    <span id="firebase-user-label" class="text-xs text-slate-300 max-w-36 truncate">Modo local</span>
+                    <button id="firebase-login-btn" onclick="window.firebaseLogin()" class="text-xs font-semibold text-sky-300 hover:text-white transition" title="Iniciar sesión con Google">
+                        <i class="fa-brands fa-google mr-1"></i>Ingresar
+                    </button>
+                    <button id="firebase-sync-btn" onclick="window.firebaseSyncNow()" class="hidden text-xs font-semibold text-emerald-300 hover:text-white transition" title="Sincronizar ahora con Firestore">
+                        <i class="fa-solid fa-cloud-arrow-up mr-1"></i>Sincronizar
+                    </button>
+                    <button id="firebase-logout-btn" onclick="window.firebaseLogout()" class="hidden text-xs text-slate-400 hover:text-rose-300 transition" title="Cerrar sesión">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+                <button onclick="exportData()" title="Descargar Respaldo" class="p-2.5 bg-slate-900/80 hover:bg-slate-800 text-sky-300 border border-slate-700 rounded-xl transition">
+                    <i class="fa-solid fa-download"></i>
+                </button>
+                <button onclick="importDataPrompt()" title="Cargar Respaldo" class="p-2.5 bg-slate-900/80 hover:bg-slate-800 text-sky-300 border border-slate-700 rounded-xl transition">
+                    <i class="fa-solid fa-upload"></i>
+                </button>
+                <button onclick="resetData()" title="Restablecer datos" class="p-2.5 bg-slate-900/80 hover:bg-red-950/80 text-slate-400 hover:text-red-400 border border-slate-700 rounded-xl transition">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:px-6 lg:px-8">
+
+        <!-- NOTIFICATION TOAST -->
+        <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-arg-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-sky-500/40 flex items-center gap-3">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-sky-400 text-lg"></i>
+            <span id="toast-message" class="text-sm font-medium">Cambios guardados correctamente</span>
+        </div>
+
+        <!-- ================= TAB: DASHBOARD ================= -->
+        <div id="tab-dashboard" class="space-y-6">
+            <!-- Escudo institucional banner con Alertas de Autoevaluaciones Pendientes -->
+            <div class="bg-gradient-to-r from-arg-900 via-sky-950 to-arg-900 rounded-2xl p-6 border border-sky-500/30 shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-2xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-300 text-3xl shadow-inner">
+                        <i class="fa-solid fa-shield-virus"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs uppercase tracking-widest text-sky-300 font-bold">Facultad de Defensa Nacional</span>
+                        <h2 id="dashboard-periodo-title" class="text-xl sm:text-2xl font-black text-white">Panel de Control Académico</h2>
+                        <p class="text-xs text-sky-200/80 mt-0.5">Seguimiento de cursada asincrónica, contactos docentes y autoevaluaciones.</p>
+                    </div>
+                </div>
+                <!-- Alerta de Vencimiento / Pendientes -->
+                <div id="dashboard-alert-box" class="bg-amber-950/80 border border-amber-600/50 p-4 rounded-xl text-amber-200 text-xs max-w-sm hidden">
+                    <div class="flex items-center gap-2 font-bold mb-1">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Alerta Académica:
+                    </div>
+                    <p id="dashboard-alert-text">Tienes autoevaluaciones pendientes en semanas anteriores.</p>
+                </div>
+            </div>
+
+            <!-- Selector y gestión de período académico -->
+            <div class="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 p-5">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-sky-400 font-bold">Período académico activo</p>
+                        <div class="flex flex-wrap items-center gap-3 mt-1">
+                            <select id="periodo-selector" onchange="window.changePeriodo(this.value)" class="bg-slate-950 border border-sky-500/40 text-white rounded-xl px-3 py-2 text-sm outline-none font-bold shadow-sm"></select>
+                            <span id="periodo-materias-badge" class="text-xs bg-sky-950 text-sky-300 border border-sky-800 px-3 py-1.5 rounded-full font-semibold">0 materias</span>
+                            <span id="periodo-semanas-badge" class="text-xs bg-slate-950 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-full font-semibold">17 semanas</span>
+                        </div>
+                        <p id="periodo-resumen" class="text-xs text-slate-400 mt-2">Cada período conserva sus materias, semanas, docentes, notas y actividades por separado.</p>
+                    </div>
+                    <button onclick="window.createPeriodo()" class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-sky-600 hover:bg-sky-500 text-white transition shadow-sm">
+                        <i class="fa-solid fa-folder-plus mr-2"></i> Nuevo período
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats overview -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-800 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Autoevaluaciones</p>
+                        <h3 id="stat-auto-done" class="text-2xl font-bold mt-1 text-sky-400">0 / 56</h3>
+                        <span id="stat-auto-pct" class="text-xs text-slate-400 font-medium">0% completadas</span>
+                    </div>
+                    <div class="w-12 h-12 bg-sky-500/10 text-sky-400 rounded-xl flex items-center justify-center text-xl border border-sky-500/20">
+                        <i class="fa-solid fa-file-pen"></i>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-800 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Promedio Autoeval.</p>
+                        <h3 id="stat-promedio" class="text-2xl font-bold mt-1 text-amber-400">-</h3>
+                        <span class="text-xs text-slate-400 font-medium">Calificaciones notas</span>
+                    </div>
+                    <div class="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-xl flex items-center justify-center text-xl border border-amber-500/20">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-800 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Exámenes Parciales</p>
+                        <h3 id="stat-parciales-count" class="text-2xl font-bold mt-1 text-emerald-400">0 / 8</h3>
+                        <span class="text-xs text-slate-400 font-medium">Parcial 1 y 2 cargados</span>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center text-xl border border-emerald-500/20">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-800 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Modalidad Cursada</p>
+                        <h3 class="text-lg font-bold mt-1 text-sky-200">Asincrónica FADENA</h3>
+                        <span class="text-xs text-sky-400 font-medium">Videos & Contacto Docente</span>
+                    </div>
+                    <div class="w-12 h-12 bg-sky-500/10 text-sky-400 rounded-xl flex items-center justify-center text-xl border border-sky-500/20">
+                        <i class="fa-solid fa-video"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Materias list card -->
+            <div class="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 p-6">
+                <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-sky-300">
+                    <i class="fa-solid fa-shield-halved text-sky-400"></i> Materias, Profesores y Contacto Académico
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="dashboard-materias-list">
+                    <!-- Generado dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB: SEMANAS ================= -->
+        <div id="tab-semanas" class="space-y-6 hidden">
+            <div class="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 p-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold flex items-center gap-2 text-sky-300">
+                            <i class="fa-solid fa-calendar-week text-sky-400"></i> Seguimiento Semanal
+                        </h2>
+                        <p class="text-sm text-slate-400">Registra qué ocurre en cada materia durante la semana: actividad normal, TP, parcial, recuperatorio u otro hito, además de videos y autoevaluaciones.</p>
+                    </div>
+                    <!-- Selector de Semana -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <label class="text-xs font-semibold text-sky-300">Seleccionar Semana:</label>
+                        <select id="semana-selector" onchange="window.changeSemana(this.value)" class="bg-slate-950 border border-sky-500/40 text-white rounded-xl px-3 py-2 text-sm outline-none font-bold shadow-sm">
+                            <!-- Generado por JS -->
+                        </select>
+                        <span id="total-semanas-badge" class="px-2.5 py-2 rounded-xl text-[11px] font-bold bg-slate-950 text-sky-300 border border-slate-800">17 semanas</span>
+                        <button onclick="window.addSemana()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-700 hover:bg-emerald-600 text-white transition" title="Agregar una semana al período">
+                            <i class="fa-solid fa-plus mr-1"></i> Semana
+                        </button>
+                        <button onclick="window.removeLastSemana()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-950 hover:bg-red-950 text-rose-300 border border-rose-900/60 transition" title="Eliminar la última semana solo si está vacía">
+                            <i class="fa-solid fa-minus mr-1"></i> Última
+                        </button>
+                        <button onclick="window.printCurrentSemana()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-sky-700 hover:bg-sky-600 text-white border border-sky-500/40 transition shadow-sm" title="Imprimir un resumen limpio de la semana activa">
+                            <i class="fa-solid fa-print mr-1"></i> Imprimir semana
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contenido de la semana seleccionada por materia -->
+                <div id="semana-content-container" class="space-y-6">
+                    <!-- Generado dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB: TPS & EXÁMENES ================= -->
+        <div id="tab-tps" class="space-y-6 hidden">
+            <div class="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 p-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold flex items-center gap-2 text-sky-300">
+                            <i class="fa-solid fa-list-check text-sky-400"></i> Trabajos Prácticos, Parciales y Exámenes
+                        </h2>
+                        <p class="text-sm text-slate-400">Carga de calificaciones para Parcial 1 (con fecha y hora), Parcial 2 (con fecha y hora), Recuperatorio y TPs.</p>
+                    </div>
+                </div>
+
+                <!-- Selector de Materia Global -->
+                <div class="mb-6 flex flex-wrap gap-2" id="global-materia-tabs">
+                    <!-- Botones generados por JS -->
+                </div>
+
+                <!-- Panel Global de la Materia -->
+                <div id="global-materia-panel" class="space-y-6">
+                    <!-- Generado por JS -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="mt-auto py-6 text-center text-xs text-slate-400 border-t border-slate-800 bg-slate-950/80">
+        <p id="footer-periodo">FADENA • Licenciatura en Ciberdefensa - Facultad de Defensa Nacional</p>
+    </footer>
+
+    <!-- SCRIPT DE LA APLICACIÓN -->
+    <script>
+        const DEFAULT_MATERIAS_2026 = [
+            {
+                id: 'prog_segura',
+                nombre: 'Programación Segura',
+                descripcion: 'Análisis de vulnerabilidades, buenas prácticas de desarrollo y mitigación de fallos de software.'
+            },
+            {
+                id: 'etica_prof',
+                nombre: 'Ética Profesional',
+                descripcion: 'Marco legal, deontología en seguridad informática y ciberinteligencia.'
+            },
+            {
+                id: 'iot',
+                nombre: 'Dispositivos Remotos e Internet de las Cosas',
+                descripcion: 'Seguridad en sistemas embebidos, protocolos IoT y arquitectura de dispositivos conectados.'
+            },
+            {
+                id: 'ciber_aplicada',
+                nombre: 'Ciberseguridad Aplicada',
+                descripcion: 'Defensa activa, respuesta a incidentes, análisis forense y operaciones de seguridad.'
+            }
+        ];
+
+        const DEFAULT_TOTAL_SEMANAS = 17;
+        const STORAGE_KEY = 'fadena_ciberdefensa_academico_v7';
+        const PREVIOUS_STORAGE_KEY_V6 = 'fadena_ciberdefensa_academico_v6';
+        const PREVIOUS_STORAGE_KEY = 'fadena_ciberdefensa_academico_v5';
+        const LEGACY_STORAGE_KEY = 'fadena_ciberdefensa_2026_data_v3';
+        let rootData = { version: 7, currentPeriodoId: '2026-2', periodos: {} };
+        let appData = {};
+        let MATERIAS_CONFIG = [];
+        let currentPeriodoId = '2026-2';
+        let currentSemana = 1;
+        let currentGlobalMateria = '';
+
+        function slugifyMateria(nombre, index = 1) {
+            const base = String(nombre || `materia_${index}`)
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+            return `${base || 'materia'}_${Date.now().toString(36)}_${index}`;
+        }
+
+        function getPeriodoActual() {
+            return rootData.periodos[currentPeriodoId];
+        }
+
+        function getTotalSemanas() {
+            return appData?.__meta?.totalSemanas || DEFAULT_TOTAL_SEMANAS;
+        }
+
+        function getPeriodoFechaInicio() {
+            return appData?.__meta?.fechaInicio || getPeriodoActual()?.fechaInicio || '2026-08-17';
+        }
+
+        function formatDateDM(date) {
+            return String(date.getUTCDate()).padStart(2, '0') + '/' + String(date.getUTCMonth() + 1).padStart(2, '0');
+        }
+
+        function getDefaultRangoFechas(sem) {
+            const inicioPeriodo = new Date(getPeriodoFechaInicio() + 'T00:00:00Z');
+            const inicio = new Date(inicioPeriodo);
+            inicio.setUTCDate(inicio.getUTCDate() + ((sem - 1) * 7));
+            const fin = new Date(inicio);
+            fin.setUTCDate(fin.getUTCDate() + 6);
+            return `${formatDateDM(inicio)} al ${formatDateDM(fin)}`;
+        }
+
+        function createDefaultSemana(s) {
+            return {
+                rangoFechas: getDefaultRangoFechas(s),
+                docentePusoActividad: true,
+                youtubeLinks: ['', '', '', ''],
+                eventoSemana: { tipo: 'normal', detalle: '' },
+                tp: { existe: false, evaluado: false, fechaPlanteo: '', diaRealizado: '', entregado: false, nota: '' },
+                autoevaluacion: { obligatoria: s !== 1, fechaPlanteo: '', diaRealizado: '', realizada: false, nota: '' }
+            };
+        }
+
+        function createEmptyMateriaData() {
+            const data = {
+                profesor: '', contacto: '',
+                parcial1: { nota: '', fecha: '', hora: '' },
+                parcial2: { nota: '', fecha: '', hora: '' },
+                recup: { nota: '', fecha: '', hora: '' }, semanas: {}
+            };
+            for (let s = 1; s <= getTotalSemanas(); s++) data.semanas[s] = createDefaultSemana(s);
+            return data;
+        }
+
+        function createPeriodoData(materias, totalSemanas, fechaInicio) {
+            const oldApp = appData;
+            appData = { __meta: { totalSemanas, fechaInicio } };
+            materias.forEach(m => appData[m.id] = createEmptyMateriaData());
+            const result = appData;
+            appData = oldApp;
+            return result;
+        }
+
+        function createDefaultRootData(legacyData = null) {
+            const materias = JSON.parse(JSON.stringify(DEFAULT_MATERIAS_2026));
+            let data;
+            if (legacyData) {
+                data = legacyData;
+                if (!data.__meta) data.__meta = {};
+                data.__meta.totalSemanas = data.__meta.totalSemanas || DEFAULT_TOTAL_SEMANAS;
+                data.__meta.fechaInicio = data.__meta.fechaInicio || '2026-08-17';
+            } else {
+                const prevApp = appData;
+                appData = { __meta: { totalSemanas: DEFAULT_TOTAL_SEMANAS, fechaInicio: '2026-08-17' } };
+                materias.forEach(m => appData[m.id] = createEmptyMateriaData());
+                data = appData;
+                appData = prevApp;
+            }
+            return {
+                version: 7,
+                currentPeriodoId: '2026-2',
+                periodos: {
+                    '2026-2': {
+                        id: '2026-2', anio: 2026, anioCarrera: 2, cuatrimestre: 2,
+                        nombre: '2.º año · 2.º cuatrimestre', fechaInicio: '2026-08-17',
+                        materias, data
+                    }
+                }
+            };
+        }
+
+        function migratePeriodoData() {
+            if (!appData.__meta) appData.__meta = {};
+            appData.__meta.totalSemanas = appData.__meta.totalSemanas || DEFAULT_TOTAL_SEMANAS;
+            appData.__meta.fechaInicio = appData.__meta.fechaInicio || getPeriodoActual()?.fechaInicio || '2026-08-17';
+            let maxSemanaExistente = 0;
+            MATERIAS_CONFIG.forEach(m => {
+                const semanas = appData[m.id]?.semanas || {};
+                Object.keys(semanas).forEach(k => {
+                    const n = parseInt(k);
+                    if (!isNaN(n)) maxSemanaExistente = Math.max(maxSemanaExistente, n);
+                });
+            });
+            appData.__meta.totalSemanas = Math.max(appData.__meta.totalSemanas, maxSemanaExistente);
+            MATERIAS_CONFIG.forEach(m => {
+                if (!appData[m.id]) appData[m.id] = createEmptyMateriaData();
+                if (!appData[m.id].semanas) appData[m.id].semanas = {};
+                for (let s = 1; s <= getTotalSemanas(); s++) {
+                    if (!appData[m.id].semanas[s]) appData[m.id].semanas[s] = createDefaultSemana(s);
+                    if (!appData[m.id].semanas[s].eventoSemana) appData[m.id].semanas[s].eventoSemana = { tipo: 'normal', detalle: '' };
+                }
+            });
+        }
+
+        function activatePeriodo(periodoId, render = true) {
+            const periodo = rootData.periodos[periodoId];
+            if (!periodo) return;
+            currentPeriodoId = periodoId;
+            rootData.currentPeriodoId = periodoId;
+            MATERIAS_CONFIG = periodo.materias || [];
+            appData = periodo.data || { __meta: { totalSemanas: DEFAULT_TOTAL_SEMANAS, fechaInicio: periodo.fechaInicio } };
+            periodo.data = appData;
+            migratePeriodoData();
+            currentSemana = Math.min(currentSemana || 1, getTotalSemanas());
+            currentGlobalMateria = MATERIAS_CONFIG.some(m => m.id === currentGlobalMateria) ? currentGlobalMateria : (MATERIAS_CONFIG[0]?.id || '');
+            if (render) {
+                renderPeriodoSelector();
+                renderSemanaSelector();
+                renderAll();
+                checkAcademicAlerts();
+            }
+        }
+
+        function periodoLabel(p) {
+            return `${p.anio} · ${p.anioCarrera}.º año · ${p.cuatrimestre}.º cuatrimestre`;
+        }
+
+        function renderPeriodoSelector() {
+            const sel = document.getElementById('periodo-selector');
+            if (!sel) return;
+            const periodos = Object.values(rootData.periodos).sort((a,b) => (a.anio-b.anio) || (a.cuatrimestre-b.cuatrimestre));
+            sel.innerHTML = periodos.map(p => `<option value="${p.id}">${periodoLabel(p)}</option>`).join('');
+            sel.value = currentPeriodoId;
+            const p = getPeriodoActual();
+            const mb = document.getElementById('periodo-materias-badge');
+            const sb = document.getElementById('periodo-semanas-badge');
+            const resumen = document.getElementById('periodo-resumen');
+            const title = document.getElementById('dashboard-periodo-title');
+            const footer = document.getElementById('footer-periodo');
+            if (mb) mb.innerText = `${MATERIAS_CONFIG.length} materia${MATERIAS_CONFIG.length === 1 ? '' : 's'}`;
+            if (sb) sb.innerText = `${getTotalSemanas()} semanas`;
+            if (resumen) resumen.innerText = `${periodoLabel(p)} · ${MATERIAS_CONFIG.length} materias cargadas · ${getTotalSemanas()} semanas actuales.`;
+            if (title) title.innerText = `Panel de Control Académico ${p.anio}`;
+            if (footer) footer.innerText = `${p.anio} FADENA • Licenciatura en Ciberdefensa - Facultad de Defensa Nacional`;
+        }
+
+        window.changePeriodo = function(periodoId) {
+            activatePeriodo(periodoId, true);
+            saveData(false);
+            showToast(`Período ${getPeriodoActual().anio} cargado`, 'fa-folder-open');
+        };
+
+        window.createPeriodo = function() {
+            const anio = parseInt(prompt('Año académico del nuevo período:', String(new Date().getFullYear() + 1)));
+            if (!anio || anio < 2020 || anio > 2100) return;
+            const anioCarrera = parseInt(prompt('Año de la carrera (ej. 3 para 3.er año):', '3'));
+            if (!anioCarrera || anioCarrera < 1 || anioCarrera > 10) return;
+            const cuatrimestre = parseInt(prompt('Cuatrimestre (1 o 2):', '1'));
+            if (![1,2].includes(cuatrimestre)) return;
+            const cantidad = parseInt(prompt('¿Cuántas materias cursás en este período?', '5'));
+            if (!cantidad || cantidad < 1 || cantidad > 20) return;
+            const fechaInicio = prompt('Fecha estimada de inicio (AAAA-MM-DD). Luego puede ajustarse:', `${anio}-03-01`) || `${anio}-03-01`;
+            const idBase = `${anio}-${cuatrimestre}`;
+            let id = idBase;
+            let n = 2;
+            while (rootData.periodos[id]) id = `${idBase}-${n++}`;
+            const materias = [];
+            for (let i = 1; i <= cantidad; i++) {
+                const nombre = (prompt(`Nombre de la materia ${i} de ${cantidad}:`, `Materia ${i}`) || `Materia ${i}`).trim();
+                materias.push({ id: slugifyMateria(nombre, i), nombre, descripcion: '' });
+            }
+            const oldPeriodo = currentPeriodoId;
+            const oldApp = appData;
+            const oldMaterias = MATERIAS_CONFIG;
+            const tmpPeriodo = { id, anio, anioCarrera, cuatrimestre, nombre: `${anioCarrera}.º año · ${cuatrimestre}.º cuatrimestre`, fechaInicio, materias, data: null };
+            rootData.periodos[id] = tmpPeriodo;
+            currentPeriodoId = id;
+            MATERIAS_CONFIG = materias;
+            appData = { __meta: { totalSemanas: DEFAULT_TOTAL_SEMANAS, fechaInicio } };
+            materias.forEach(m => appData[m.id] = createEmptyMateriaData());
+            tmpPeriodo.data = appData;
+            rootData.currentPeriodoId = id;
+            currentSemana = 1;
+            currentGlobalMateria = materias[0]?.id || '';
+            saveData(false);
+            renderPeriodoSelector();
+            renderSemanaSelector();
+            renderAll();
+            checkAcademicAlerts();
+            showToast(`${anio}: período creado con ${cantidad} materias`, 'fa-folder-plus');
+        };
+
+        function initApp() {
+            const savedV7 = localStorage.getItem(STORAGE_KEY);
+            const savedV6 = localStorage.getItem(PREVIOUS_STORAGE_KEY_V6);
+            const savedV5 = localStorage.getItem(PREVIOUS_STORAGE_KEY);
+            if (savedV7) {
+                try { rootData = JSON.parse(savedV7); }
+                catch(e) { rootData = createDefaultRootData(); }
+            } else if (savedV6) {
+                try { rootData = JSON.parse(savedV6); }
+                catch(e) { rootData = createDefaultRootData(); }
+            } else if (savedV5) {
+                try {
+                    rootData = JSON.parse(savedV5);
+                    rootData.version = 6;
+                } catch(e) { rootData = createDefaultRootData(); }
+            } else {
+                let legacy = null;
+                const savedLegacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+                if (savedLegacy) {
+                    try { legacy = JSON.parse(savedLegacy); } catch(e) {}
+                }
+                rootData = createDefaultRootData(legacy);
+            }
+            if (!rootData.periodos || Object.keys(rootData.periodos).length === 0) rootData = createDefaultRootData();
+            activatePeriodo(rootData.currentPeriodoId || Object.keys(rootData.periodos)[0], false);
+            saveData(false);
+            renderPeriodoSelector();
+            renderSemanaSelector();
+            renderAll();
+            checkAcademicAlerts();
+        }
+
+        function saveData(notify = true) {
+            const periodo = getPeriodoActual();
+            if (periodo) {
+                periodo.data = appData;
+                periodo.materias = MATERIAS_CONFIG;
+                periodo.fechaInicio = getPeriodoFechaInicio();
+            }
+            rootData.currentPeriodoId = currentPeriodoId;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(rootData));
+            if (typeof window.firebaseQueueSave === 'function') window.firebaseQueueSave();
+            updateDashboardStats();
+            checkAcademicAlerts();
+            renderPeriodoSelector();
+            if (notify) showToast('Cambios guardados correctamente');
+        }
+
+        window.resetData = function() {
+            const p = getPeriodoActual();
+            if (!confirm(`¿Restablecer solamente ${periodoLabel(p)}? Se borrarán los datos de este período, no los demás años.`)) return;
+            appData = { __meta: { totalSemanas: DEFAULT_TOTAL_SEMANAS, fechaInicio: p.fechaInicio } };
+            MATERIAS_CONFIG.forEach(m => appData[m.id] = createEmptyMateriaData());
+            p.data = appData;
+            currentSemana = 1;
+            saveData(false);
+            renderSemanaSelector();
+            renderAll();
+            showToast('Período restablecido', 'fa-rotate-right');
+        };
+
+        window.exportData = function() {
+            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(rootData, null, 2));
+            const a = document.createElement('a');
+            a.setAttribute('href', dataStr);
+            a.setAttribute('download', `fadena_ciberdefensa_respaldo_completo_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(a); a.click(); a.remove();
+            showToast('Respaldo completo descargado');
+        };
+
+        window.importDataPrompt = function() {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = '.json';
+            input.onchange = e => {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader(); reader.readAsText(file, 'UTF-8');
+                reader.onload = ev => {
+                    try {
+                        const imported = JSON.parse(ev.target.result);
+                        rootData = imported.periodos ? imported : createDefaultRootData(imported);
+                        activatePeriodo(rootData.currentPeriodoId || Object.keys(rootData.periodos)[0], false);
+                        saveData(false); renderPeriodoSelector(); renderSemanaSelector(); renderAll();
+                        showToast('Respaldo importado con éxito');
+                    } catch(err) { alert('El archivo no es válido.'); }
+                };
+            };
+            input.click();
+        };
+
+        let currentActiveTab = 'dashboard';
+        window.switchTab = function(tabId) {
+            currentActiveTab = tabId;
+            ['dashboard', 'semanas', 'tps'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                const btn = document.getElementById(`btn-tab-${t}`);
+                if (t === tabId) {
+                    el.classList.remove('hidden');
+                    btn.className = "px-4 py-2 rounded-xl text-sm font-medium bg-sky-500 text-white transition shadow-sm hover:bg-sky-400";
+                } else {
+                    el.classList.add('hidden');
+                    btn.className = "px-4 py-2 rounded-xl text-sm font-medium bg-slate-900/80 text-slate-300 hover:bg-slate-800 transition border border-slate-700";
+                }
+            });
+            renderActiveTabContent();
+        }
+
+        function renderAll() {
+            renderActiveTabContent();
+        }
+
+        function renderActiveTabContent() {
+            if (currentActiveTab === 'dashboard') renderDashboard();
+            else if (currentActiveTab === 'semanas') renderSemanasView();
+            else if (currentActiveTab === 'tps') renderGlobalTPsView();
+        }
+
+        function checkAcademicAlerts() {
+            let pendingCount = 0;
+            // Detectar autoevaluaciones no realizadas únicamente en semanas ya finalizadas.
+            const inicioPeriodo = new Date(getPeriodoFechaInicio() + 'T00:00:00Z');
+            const hoy = new Date();
+            const hoyUTC = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()));
+            const diasDesdeInicio = Math.floor((hoyUTC - inicioPeriodo) / 86400000);
+            const semanaActual = diasDesdeInicio >= 0 ? Math.floor(diasDesdeInicio / 7) + 1 : 0;
+            const ultimaSemanaFinalizada = Math.min(getTotalSemanas(), Math.max(0, semanaActual - 1));
+
+            MATERIAS_CONFIG.forEach(m => {
+                const matData = appData[m.id];
+                if (!matData || !matData.semanas) return;
+                for (let s = 1; s <= ultimaSemanaFinalizada; s++) {
+                    const sem = matData.semanas[s];
+                    if (sem && sem.docentePusoActividad && sem.autoevaluacion && sem.autoevaluacion.obligatoria && !sem.autoevaluacion.realizada) {
+                        pendingCount++;
+                    }
+                }
+            });
+
+            const alertBox = document.getElementById('dashboard-alert-box');
+            const alertText = document.getElementById('dashboard-alert-text');
+            if (pendingCount > 0) {
+                alertBox.classList.remove('hidden');
+                alertText.innerText = `Tienes ${pendingCount} autoevaluación(es) obligatoria(s) pendientes en semanas anteriores.`;
+            } else {
+                alertBox.classList.add('hidden');
+            }
+        }
+
+        function updateDashboardStats() {
+            let totalAutoeval = 0;
+            let doneAutoeval = 0;
+            let totalNotas = [];
+            let totalParciales = 0;
+            let cargadosParciales = 0;
+
+            MATERIAS_CONFIG.forEach(m => {
+                const matData = appData[m.id];
+                if (!matData) return;
+                
+                totalParciales += 2; // P1 y P2
+                if (matData.parcial1 && matData.parcial1.nota !== '' && !isNaN(parseFloat(matData.parcial1.nota))) cargadosParciales++;
+                if (matData.parcial2 && matData.parcial2.nota !== '' && !isNaN(parseFloat(matData.parcial2.nota))) cargadosParciales++;
+
+                if (matData.semanas) {
+                    for (let s = 1; s <= getTotalSemanas(); s++) {
+                        const sem = matData.semanas[s];
+                        if (sem && sem.docentePusoActividad && sem.autoevaluacion && sem.autoevaluacion.obligatoria) {
+                            totalAutoeval++;
+                            if (sem.autoevaluacion.realizada) doneAutoeval++;
+                            if (sem.autoevaluacion.nota !== '' && !isNaN(parseFloat(sem.autoevaluacion.nota))) {
+                                totalNotas.push(parseFloat(sem.autoevaluacion.nota));
+                            }
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('stat-auto-done').innerText = `${doneAutoeval} / ${totalAutoeval}`;
+            const pct = Math.round((doneAutoeval / totalAutoeval) * 100) || 0;
+            document.getElementById('stat-auto-pct').innerText = `${pct}% completadas`;
+
+            const prom = totalNotas.length > 0 ? (totalNotas.reduce((a, b) => a + b, 0) / totalNotas.length).toFixed(1) : '-';
+            document.getElementById('stat-promedio').innerText = prom;
+
+            document.getElementById('stat-parciales-count').innerText = `${cargadosParciales} / ${totalParciales}`;
+        }
+
+        function renderDashboard() {
+            updateDashboardStats();
+            const container = document.getElementById('dashboard-materias-list');
+            container.innerHTML = MATERIAS_CONFIG.map(m => {
+                const matData = appData[m.id] || { profesor: '', contacto: '', parcial1: {}, parcial2: {}, recup: {} };
+                return `
+                    <div class="p-5 rounded-2xl border border-slate-800 bg-slate-950/60 flex flex-col justify-between gap-4 shadow-sm hover:border-sky-500/40 transition">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="font-bold text-sky-200 text-base">${m.nombre}</h4>
+                                <span class="text-[10px] bg-sky-950 text-sky-300 border border-sky-800 px-2 py-0.5 rounded-full font-semibold">2do Cuatrimestre</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1 mb-3">${m.descripcion}</p>
+                            
+                            <!-- Contacto Docente -->
+                            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
+                                <div>
+                                    <label class="block text-[10px] uppercase text-slate-400 font-bold mb-0.5"><i class="fa-solid fa-chalkboard-user mr-1 text-sky-400"></i> Profesor:</label>
+                                    <input type="text" value="${matData.profesor || ''}" placeholder="Nombre del docente..." onchange="window.updateDocenteInfo('${m.id}', 'profesor', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1 text-white w-full">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] uppercase text-slate-400 font-bold mb-0.5"><i class="fa-solid fa-envelope mr-1 text-sky-400"></i> Email / Contacto Académico:</label>
+                                    <input type="text" value="${matData.contacto || ''}" placeholder="docente@fadena.edu.ar / aula..." onchange="window.updateDocenteInfo('${m.id}', 'contacto', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1 text-white w-full font-mono">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs pt-3 border-t border-slate-800/80">
+                            <div class="flex items-center gap-2 font-mono">
+                                <span class="bg-slate-900 px-2 py-1 rounded text-slate-300 border border-slate-800" title="Parcial 1">P1: ${matData.parcial1?.nota || '-'}</span>
+                                <span class="bg-slate-900 px-2 py-1 rounded text-slate-300 border border-slate-800" title="Parcial 2">P2: ${matData.parcial2?.nota || '-'}</span>
+                                <span class="bg-slate-900 px-2 py-1 rounded text-slate-300 border border-slate-800" title="Recuperatorio">Rec: ${matData.recup?.nota || '-'}</span>
+                            </div>
+                            <button onclick="switchTab('semanas'); window.changeSemana(1);" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl transition font-medium shadow-sm">Ver Semanas</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.updateDocenteInfo = function(mId, field, val) {
+            if (!appData[mId]) appData[mId] = {};
+            appData[mId][field] = val;
+            saveData(true);
+        }
+
+        function renderSemanaSelector() {
+            const sel = document.getElementById('semana-selector');
+            let html = '';
+            for (let s = 1; s <= getTotalSemanas(); s++) {
+                html += `<option value="${s}">Semana ${s} ${s === 1 ? '(Presentación)' : ''}</option>`;
+            }
+            sel.innerHTML = html;
+            if (currentSemana > getTotalSemanas()) currentSemana = getTotalSemanas();
+            sel.value = currentSemana;
+            const badge = document.getElementById('total-semanas-badge');
+            if (badge) badge.innerText = `${getTotalSemanas()} semanas`;
+            const periodoBadge = document.getElementById('periodo-semanas-badge');
+            if (periodoBadge) periodoBadge.innerText = `${getTotalSemanas()} semanas`;
+        }
+
+        function semanaHasUserData(semData, numeroSemana) {
+            if (!semData) return false;
+            const youtube = Array.isArray(semData.youtubeLinks) && semData.youtubeLinks.some(v => String(v || '').trim() !== '');
+            const tp = semData.tp || {};
+            const auto = semData.autoevaluacion || {};
+            const evento = semData.eventoSemana || { tipo: 'normal', detalle: '' };
+            const rangoModificado = String(semData.rangoFechas || '') !== getDefaultRangoFechas(numeroSemana);
+            const actividadModificada = semData.docentePusoActividad === false;
+            const eventoModificado = (evento.tipo || 'normal') !== 'normal' || String(evento.detalle || '').trim() !== '';
+
+            return youtube || rangoModificado || actividadModificada || eventoModificado ||
+                tp.existe === true || tp.evaluado === true || tp.entregado === true ||
+                String(tp.fechaPlanteo || '').trim() !== '' || String(tp.diaRealizado || '').trim() !== '' || String(tp.nota || '').trim() !== '' ||
+                auto.realizada === true || String(auto.fechaPlanteo || '').trim() !== '' ||
+                String(auto.diaRealizado || '').trim() !== '' || String(auto.nota || '').trim() !== '';
+        }
+
+        window.addSemana = function() {
+            const nuevaSemana = getTotalSemanas() + 1;
+            appData.__meta.totalSemanas = nuevaSemana;
+            MATERIAS_CONFIG.forEach(m => {
+                if (!appData[m.id].semanas[nuevaSemana]) appData[m.id].semanas[nuevaSemana] = createDefaultSemana(nuevaSemana);
+            });
+            saveData(false);
+            renderSemanaSelector();
+            renderActiveTabContent();
+            showToast(`Semana ${nuevaSemana} agregada`, 'fa-plus');
+        }
+
+        window.removeLastSemana = function() {
+            const ultimaSemana = getTotalSemanas();
+            if (ultimaSemana <= 1) {
+                showToast('Debe existir al menos una semana', 'fa-triangle-exclamation');
+                return;
+            }
+
+            const materiasConDatos = MATERIAS_CONFIG.filter(m => semanaHasUserData(appData[m.id]?.semanas?.[ultimaSemana], ultimaSemana));
+            if (materiasConDatos.length > 0) {
+                alert(`No se puede eliminar la Semana ${ultimaSemana} porque contiene información cargada en: ${materiasConDatos.map(m => m.nombre).join(', ')}.\n\nPara proteger tus datos, primero debes vaciar esa semana.`);
+                return;
+            }
+
+            if (!confirm(`¿Eliminar la Semana ${ultimaSemana}? Está vacía y no se perderán datos académicos.`)) return;
+
+            MATERIAS_CONFIG.forEach(m => {
+                delete appData[m.id]?.semanas?.[ultimaSemana];
+            });
+            appData.__meta.totalSemanas = ultimaSemana - 1;
+            if (currentSemana > getTotalSemanas()) currentSemana = getTotalSemanas();
+            saveData(false);
+            renderSemanaSelector();
+            renderActiveTabContent();
+            showToast(`Semana ${ultimaSemana} eliminada`, 'fa-minus');
+        }
+
+        window.changeSemana = function(val) {
+            currentSemana = parseInt(val);
+            document.getElementById('semana-selector').value = currentSemana;
+            renderSemanasView();
+        }
+
+        function renderSemanasView() {
+            const container = document.getElementById('semana-content-container');
+            container.innerHTML = MATERIAS_CONFIG.map(m => {
+                const matData = appData[m.id] || { semanas: {} };
+                const semData = matData.semanas[currentSemana] || {
+                    rangoFechas: getDefaultRangoFechas(currentSemana),
+                    docentePusoActividad: true,
+                    youtubeLinks: ['', '', '', ''],
+                    eventoSemana: { tipo: 'normal', detalle: '' },
+                    tp: { existe: false, evaluado: false, fechaPlanteo: '', diaRealizado: '', entregado: false, nota: '' },
+                    autoevaluacion: { obligatoria: true, fechaPlanteo: '', diaRealizado: '', realizada: false, nota: '' }
+                };
+
+                const evento = semData.eventoSemana || { tipo: 'normal', detalle: '' };
+                const tipoEvento = evento.tipo || 'normal';
+                const eventoLabels = {
+                    normal: 'Actividad normal',
+                    parcial1: 'Parcial 1',
+                    parcial2: 'Parcial 2',
+                    recuperatorio: 'Recuperatorio',
+                    otro: 'Otro hito académico'
+                };
+                const examenKey = tipoEvento === 'parcial1' ? 'parcial1' : tipoEvento === 'parcial2' ? 'parcial2' : tipoEvento === 'recuperatorio' ? 'recup' : null;
+                const examenData = examenKey ? (matData[examenKey] || {}) : null;
+                const tpTieneDatos = semData.tp && (semData.tp.existe || semData.tp.entregado || semData.tp.evaluado || semData.tp.fechaPlanteo || semData.tp.diaRealizado || semData.tp.nota);
+
+                let youtubeSlotsHtml = '';
+                for (let i = 0; i < 4; i++) {
+                    const link = (semData.youtubeLinks && semData.youtubeLinks[i]) ? semData.youtubeLinks[i] : '';
+                    youtubeSlotsHtml += `
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-bold text-sky-400 w-4">#${i+1}</span>
+                            <input type="text" value="${link}" placeholder="Enlace YouTube ${i+1}" onchange="window.updateYoutubeLink('${m.id}', ${currentSemana}, ${i}, this.value)" class="text-xs bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-slate-200 w-44 outline-none focus:border-sky-500 font-mono">
+                            ${link ? `<a href="${link.startsWith('http') ? link : 'https://' + link}" target="_blank" class="px-2 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs transition" title="Ver video"><i class="fa-brands fa-youtube"></i></a>` : ''}
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="bg-slate-950/70 rounded-2xl p-5 border border-slate-800 space-y-4 shadow-sm">
+                        <!-- Cabecera de la materia y rango de fechas -->
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pb-3 border-b border-slate-800">
+                            <div>
+                                <h3 class="font-bold text-sky-300 text-base">${m.nombre}</h3>
+                                <p class="text-xs text-slate-400">Semana ${currentSemana} ${currentSemana === 1 ? '• Introducción' : ''}</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-4">
+                                <!-- El docente puso actividad -->
+                                <label class="inline-flex items-center cursor-pointer text-xs bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+                                    <input type="checkbox" ${semData.docentePusoActividad ? 'checked' : ''} onchange="window.updateField('${m.id}', ${currentSemana}, 'docentePusoActividad', this.checked)" class="sr-only peer">
+                                    <div class="w-8 h-4 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-600 relative"></div>
+                                    <span class="ml-2 font-medium text-slate-200">${semData.docentePusoActividad ? 'Docente Puso Actividad' : 'Docente Sin Actividad'}</span>
+                                </label>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-[11px] font-semibold text-sky-300">Rango Semanal:</label>
+                                    <input type="text" value="${semData.rangoFechas || ''}" placeholder="Ej. 17/8 al 23/8" onchange="window.updateField('${m.id}', ${currentSemana}, 'rangoFechas', this.value)" class="text-xs bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-sky-200 w-32 text-center font-medium outline-none focus:border-sky-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900/80 p-3 rounded-xl border ${tipoEvento !== 'normal' ? 'border-amber-700/50' : 'border-slate-800'}">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                <div>
+                                    <span class="text-xs font-bold text-slate-300 block"><i class="fa-solid fa-bookmark text-amber-400 mr-1.5"></i> Hito principal de esta materia en la semana</span>
+                                    <span class="text-[10px] text-slate-500">Cada materia puede tener un calendario diferente.</span>
+                                </div>
+                                <select onchange="window.updateSemanaEvento('${m.id}', ${currentSemana}, this.value)" class="bg-slate-950 border border-slate-700 text-white rounded-lg px-3 py-2 text-xs font-semibold outline-none focus:border-sky-500">
+                                    <option value="normal" ${tipoEvento === 'normal' ? 'selected' : ''}>Actividad normal / TP</option>
+                                    <option value="parcial1" ${tipoEvento === 'parcial1' ? 'selected' : ''}>Parcial 1</option>
+                                    <option value="parcial2" ${tipoEvento === 'parcial2' ? 'selected' : ''}>Parcial 2</option>
+                                    <option value="recuperatorio" ${tipoEvento === 'recuperatorio' ? 'selected' : ''}>Recuperatorio</option>
+                                    <option value="otro" ${tipoEvento === 'otro' ? 'selected' : ''}>Otro hito académico</option>
+                                </select>
+                            </div>
+                            ${tipoEvento === 'otro' ? `
+                                <div class="mt-3">
+                                    <label class="block text-[10px] uppercase text-slate-400 font-bold mb-1">Descripción del hito:</label>
+                                    <input type="text" value="${evento.detalle || ''}" placeholder="Ej. clase integradora, exposición, entrega especial..." onchange="window.updateSemanaEventoDetalle('${m.id}', ${currentSemana}, this.value)" class="bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-xs w-full outline-none focus:border-sky-500">
+                                </div>
+                            ` : ''}
+                            ${examenKey ? `
+                                <div class="mt-3 bg-amber-950/40 border border-amber-700/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div class="text-xs">
+                                        <span class="font-black text-amber-300 uppercase tracking-wide"><i class="fa-solid fa-award mr-1"></i> ${eventoLabels[tipoEvento]}</span>
+                                        <div class="text-slate-300 mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                                            <span>Fecha: <b>${examenData?.fecha || 'sin cargar'}</b></span>
+                                            <span>Hora: <b>${examenData?.hora || 'sin cargar'}</b></span>
+                                            <span>Nota: <b>${examenData?.nota || '-'}</b></span>
+                                        </div>
+                                        ${tpTieneDatos ? '<div class="mt-2 text-amber-300"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Esta semana conserva información de un TP. No fue borrada; revisala si corresponde.</div>' : ''}
+                                    </div>
+                                    <button onclick="switchTab('tps'); window.selectGlobalMateria('${m.id}')" class="shrink-0 px-3 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 rounded-lg text-xs font-bold transition">Ver en TPs & Exámenes</button>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        ${semData.docentePusoActividad ? `
+                            <!-- Sección de Videos de YouTube (Hasta 4) -->
+                            <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                                <span class="text-xs font-bold text-slate-300 block mb-2"><i class="fa-brands fa-youtube text-red-500 mr-1.5"></i> Explicaciones Audiovisuales en YouTube (Hasta 4 enlaces):</span>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                                    ${youtubeSlotsHtml}
+                                </div>
+                            </div>
+
+                            <!-- Grid para TP y Autoevaluación -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                ${tipoEvento === 'normal' ? `
+                                <!-- BLOQUE TRABAJO PRÁCTICO -->
+                                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <h4 class="font-semibold text-sm text-slate-200 flex items-center gap-2">
+                                            <i class="fa-solid fa-laptop-code text-sky-400"></i> Trabajo Práctico Semanal
+                                        </h4>
+                                        <label class="inline-flex items-center cursor-pointer text-xs">
+                                            <input type="checkbox" ${semData.tp.existe ? 'checked' : ''} onchange="window.updateTPSubField('${m.id}', ${currentSemana}, 'existe', this.checked)" class="sr-only peer">
+                                            <div class="w-8 h-4 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-600 relative"></div>
+                                            <span class="ml-2 font-medium text-slate-300">${semData.tp.existe ? 'Hay TP' : 'Sin TP'}</span>
+                                        </label>
+                                    </div>
+                                    ${semData.tp.existe ? `
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
+                                            <div>
+                                                <label class="block text-slate-400 mb-1">Día/Fecha Planteo:</label>
+                                                <input type="date" value="${semData.tp.fechaPlanteo || ''}" onchange="window.updateTPSubField('${m.id}', ${currentSemana}, 'fechaPlanteo', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
+                                            </div>
+                                            <div>
+                                                <label class="block text-slate-400 mb-1">Día que lo realicé:</label>
+                                                <input type="date" value="${semData.tp.diaRealizado || ''}" onchange="window.updateTPSubField('${m.id}', ${currentSemana}, 'diaRealizado', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
+                                            </div>
+                                            <div class="flex items-center gap-2 pt-1">
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" ${semData.tp.entregado ? 'checked' : ''} onchange="window.updateTPSubField('${m.id}', ${currentSemana}, 'entregado', this.checked)" class="sr-only peer">
+                                                    <div class="w-8 h-4 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600 relative"></div>
+                                                    <span class="ml-2 font-medium text-slate-300">Entregado</span>
+                                                </label>
+                                            </div>
+                                            <div class="flex items-center gap-2 pt-1">
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" ${semData.tp.evaluado ? 'checked' : ''} onchange="window.updateTPSubField('${m.id}', ${currentSemana}, 'evaluado', this.checked)" class="sr-only peer">
+                                                    <div class="w-8 h-4 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-600 relative"></div>
+                                                    <span class="ml-2 font-medium text-slate-300">Es Evaluado</span>
+                                                </label>
+                                            </div>
+                                            ${semData.tp.evaluado ? `
+                                                <div class="sm:col-span-2">
+                                                    <label class="block text-slate-400 mb-1">Nota Asignada al TP:</label>
+                                                    <input type="text" value="${semData.tp.nota || ''}" placeholder="Ej. 8 / Aprobado" onchange="window.updateTPSubField('${m.id}', ${currentSemana}, 'nota', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white font-semibold w-32">
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    ` : '<p class="text-xs text-slate-500 italic py-1">No hay trabajo práctico para esta semana.</p>'}
+                                </div>
+
+                                ` : `
+                                    <div class="bg-amber-950/20 p-4 rounded-xl border border-amber-800/40 space-y-3">
+                                        <h4 class="font-semibold text-sm text-amber-200 flex items-center gap-2">
+                                            <i class="fa-solid fa-calendar-day text-amber-400"></i> ${eventoLabels[tipoEvento] || 'Hito académico'}
+                                        </h4>
+                                        <p class="text-xs text-slate-400">Esta semana queda identificada como <b class="text-amber-300">${eventoLabels[tipoEvento] || evento.detalle || 'hito académico'}</b> para esta materia. Por eso no se muestra como “Sin TP”.</p>
+                                        ${tipoEvento === 'otro' && evento.detalle ? `<p class="text-xs text-slate-300 bg-slate-950/60 rounded-lg p-2 border border-slate-800">${evento.detalle}</p>` : ''}
+                                        ${tpTieneDatos ? '<p class="text-xs text-amber-300"><i class="fa-solid fa-shield-halved mr-1"></i> Hay datos de TP conservados en esta semana; el sistema no los eliminó.</p>' : ''}
+                                    </div>
+                                `}
+
+                                <!-- BLOQUE AUTOEVALUACIÓN OBLIGATORIA -->
+                                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <h4 class="font-semibold text-sm text-slate-200 flex items-center gap-2">
+                                            <i class="fa-solid fa-file-pen text-emerald-400"></i> Autoevaluación Obligatoria
+                                        </h4>
+                                        <span class="text-xs bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded-full font-medium">Obligatoria</span>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
+                                        <div>
+                                            <label class="block text-slate-400 mb-1">Fecha Límite / Vencimiento:</label>
+                                            <input type="date" value="${semData.autoevaluacion.fechaPlanteo || ''}" onchange="window.updateAutoSubField('${m.id}', ${currentSemana}, 'fechaPlanteo', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
+                                        </div>
+                                        <div>
+                                            <label class="block text-slate-400 mb-1">Día que la realicé:</label>
+                                            <input type="date" value="${semData.autoevaluacion.diaRealizado || ''}" onchange="window.updateAutoSubField('${m.id}', ${currentSemana}, 'diaRealizado', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
+                                        </div>
+                                        <div class="flex items-center gap-2 pt-1">
+                                            <label class="inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" ${semData.autoevaluacion.realizada ? 'checked' : ''} onchange="window.updateAutoSubField('${m.id}', ${currentSemana}, 'realizada', this.checked)" class="sr-only peer">
+                                                <div class="w-8 h-4 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600 relative"></div>
+                                                <span class="ml-2 font-medium text-slate-300">Realizada</span>
+                                            </label>
+                                        </div>
+                                        <div>
+                                            <label class="block text-slate-400 mb-1">Nota Obtenida:</label>
+                                            <input type="text" value="${semData.autoevaluacion.nota || ''}" placeholder="Ej. 10" onchange="window.updateAutoSubField('${m.id}', ${currentSemana}, 'nota', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white font-semibold w-24">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="p-6 bg-slate-900/40 rounded-xl text-center border border-slate-800/80">
+                                <p class="text-xs text-amber-400 font-medium"><i class="fa-solid fa-circle-info mr-1"></i> El docente indicó que no hay actividad asignada para esta semana.</p>
+                            </div>
+                        `}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.updateSemanaEvento = function(mId, semana, tipo) {
+            const sem = appData[mId]?.semanas?.[semana];
+            if (!sem) return;
+            if (!sem.eventoSemana) sem.eventoSemana = { tipo: 'normal', detalle: '' };
+            sem.eventoSemana.tipo = tipo;
+            if (tipo !== 'otro') sem.eventoSemana.detalle = '';
+            saveData(false);
+            renderSemanasView();
+            const labels = { normal: 'Actividad normal / TP', parcial1: 'Parcial 1', parcial2: 'Parcial 2', recuperatorio: 'Recuperatorio', otro: 'Otro hito académico' };
+            showToast(`Semana ${semana}: ${labels[tipo] || 'hito actualizado'}`, tipo === 'normal' ? 'fa-calendar-week' : 'fa-bookmark');
+        };
+
+        window.updateSemanaEventoDetalle = function(mId, semana, val) {
+            const sem = appData[mId]?.semanas?.[semana];
+            if (!sem) return;
+            if (!sem.eventoSemana) sem.eventoSemana = { tipo: 'otro', detalle: '' };
+            sem.eventoSemana.detalle = val;
+            saveData(true);
+        };
+
+        window.updateField = function(mId, semana, field, val) {
+            if (!appData[mId].semanas[semana]) appData[mId].semanas[semana] = {};
+            appData[mId].semanas[semana][field] = val;
+            saveData(true);
+            if (field === 'docentePusoActividad') renderSemanasView();
+        }
+
+        window.updateYoutubeLink = function(mId, semana, index, val) {
+            if (!appData[mId].semanas[semana].youtubeLinks) appData[mId].semanas[semana].youtubeLinks = ['', '', '', ''];
+            appData[mId].semanas[semana].youtubeLinks[index] = val;
+            saveData(true);
+        }
+
+        window.updateTPSubField = function(mId, semana, field, val) {
+            if (!appData[mId].semanas[semana].tp) appData[mId].semanas[semana].tp = {};
+            appData[mId].semanas[semana].tp[field] = val;
+            saveData(true);
+            if (field === 'existe' || field === 'evaluado') renderSemanasView();
+        }
+
+        window.updateAutoSubField = function(mId, semana, field, val) {
+            if (!appData[mId].semanas[semana].autoevaluacion) appData[mId].semanas[semana].autoevaluacion = {};
+            appData[mId].semanas[semana].autoevaluacion[field] = val;
+            saveData(true);
+        }
+
+        window.updateExamenField = function(mId, examenKey, subField, val) {
+            if (!appData[mId]) appData[mId] = {};
+            if (!appData[mId][examenKey]) appData[mId][examenKey] = { nota: '', fecha: '', hora: '' };
+            appData[mId][examenKey][subField] = val;
+            saveData(true);
+        }
+
+        function renderGlobalTPsView() {
+            const tabsContainer = document.getElementById('global-materia-tabs');
+            tabsContainer.innerHTML = MATERIAS_CONFIG.map(m => `
+                <button onclick="window.selectGlobalMateria('${m.id}')" class="px-4 py-2 rounded-xl text-xs font-semibold transition ${currentGlobalMateria === m.id ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800'}">
+                    ${m.nombre}
+                </button>
+            `).join('');
+
+            const materia = MATERIAS_CONFIG.find(m => m.id === currentGlobalMateria);
+            if (!materia) {
+                document.getElementById('global-materia-panel').innerHTML = '<div class="p-6 text-center text-slate-400">Este período todavía no tiene materias.</div>';
+                return;
+            }
+            const matData = appData[currentGlobalMateria] || { parcial1: {}, parcial2: {}, recup: {}, semanas: {} };
+
+            const p1 = matData.parcial1 || { nota: '', fecha: '', hora: '' };
+            const p2 = matData.parcial2 || { nota: '', fecha: '', hora: '' };
+            const rec = matData.recup || { nota: '', fecha: '', hora: '' };
+
+            const panel = document.getElementById('global-materia-panel');
+            panel.innerHTML = `
+                <div class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <div>
+                        <h3 class="font-bold text-sky-300 text-base">${materia.nombre}</h3>
+                        <p class="text-xs text-slate-400">Planificación de fechas, franjas horarias y calificaciones de Parciales y Recuperatorio.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                        <!-- Parcial 1 -->
+                        <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-2 text-xs">
+                            <span class="font-bold text-sky-400 block"><i class="fa-solid fa-award mr-1"></i> Parcial 1</span>
+                            <div>
+                                <label class="block text-[10px] text-slate-400 uppercase">Fecha:</label>
+                                <input type="date" value="${p1.fecha || ''}" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial1', 'fecha', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-400 uppercase">Franja Horaria:</label>
+                                <input type="text" value="${p1.hora || ''}" placeholder="Ej. 18:00 a 20:00 hs" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial1', 'hora', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-400 uppercase font-bold text-emerald-400">Nota:</label>
+                                <input type="text" value="${p1.nota || ''}" placeholder="-" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial1', 'nota', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white font-bold w-full">
+                            </div>
+                        </div>
+
+                        <!-- Parcial 2 -->
+                        <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-2 text-xs">
+                            <span class="font-bold text-sky-400 block"><i class="fa-solid fa-award mr-1"></i> Parcial 2</span>
+                            <div>
+                                <label class="block text-[10px] text-slate-400 uppercase">Fecha:</label>
+                                <input type="date" value="${p2.fecha || ''}" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial2', 'fecha', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-400 uppercase">Franja Horaria:</label>
+                                <input type="text" value="${p2.hora || ''}" placeholder="Ej. 18:00 a 20:00 hs" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial2', 'hora', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-400 uppercase font-bold text-emerald-400">Nota:</label>
+                                <input type="text" value="${p2.nota || ''}" placeholder="-" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial2', 'nota', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white font-bold w-full">
+                            </div>
+                        </div>
+
+                        <!-- Recuperatorio -->
+                        <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-2 text-xs">
+                            <span class="font-bold text-amber-400 block"><i class="fa-solid fa-rotate-left mr-1"></i> Recuperatorio</span>
+                            <div>
+                                <label class="block text-[10px] text-slate-400 uppercase">Fecha:</label>
+                                <input type="date" value="${rec.fecha || ''}" onchange="window.updateExamenField('${currentGlobalMateria}', 'recup', 'fecha', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-400 uppercase">Franja Horaria:</label>
+                                <input type="text" value="${rec.hora || ''}" placeholder="Ej. 18:00 a 20:00 hs" onchange="window.updateExamenField('${currentGlobalMateria}', 'recup', 'hora', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-400 uppercase font-bold text-emerald-400">Nota:</label>
+                                <input type="text" value="${rec.nota || ''}" placeholder="-" onchange="window.updateExamenField('${currentGlobalMateria}', 'recup', 'nota', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white font-bold w-full">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-950/50">
+                                <th class="p-3 w-28 text-center">Semana</th>
+                                <th class="p-3">Trabajo Práctico (TP) [Estado / Fecha / Nota]</th>
+                                <th class="p-3">Autoevaluación Obligatoria [Realizada / Fecha / Nota]</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-sm">
+                            ${(() => {
+                                let rows = '';
+                                for (let s = 1; s <= getTotalSemanas(); s++) {
+                                    const sem = matData.semanas[s] || { tp: {}, autoevaluacion: {} };
+                                    rows += `
+                                        <tr class="hover:bg-slate-950/40 transition ${!sem.docentePusoActividad ? 'opacity-50 bg-slate-900/20' : ''}">
+                                            <td class="p-3 text-center">
+                                                <span class="font-bold text-sky-400 block">Semana ${s}</span>
+                                                <span class="text-[10px] text-slate-400">${sem.rangoFechas || ''}</span>
+                                                ${!sem.docentePusoActividad ? '<span class="text-[9px] text-amber-400 block">Sin Actividad</span>' : ''}
+                                            </td>
+                                            <td class="p-3 text-xs">
+                                                ${sem.docentePusoActividad && sem.tp.existe ? `
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="px-2 py-0.5 rounded ${sem.tp.entregado ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-slate-800 text-slate-400'}">${sem.tp.entregado ? 'Entregado' : 'Pendiente'}</span>
+                                                        <span class="text-slate-400">Planteo: ${sem.tp.fechaPlanteo || '-'}</span>
+                                                        <span class="text-slate-400">Realizado: ${sem.tp.diaRealizado || '-'}</span>
+                                                        ${sem.tp.evaluado ? `<span class="bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded font-bold">Nota TP: ${sem.tp.nota || '-'}</span>` : '<span class="text-slate-500 italic">TP No Evaluado</span>'}
+                                                    </div>
+                                                ` : '<span class="text-slate-500 italic">Sin TP en esta semana</span>'}
+                                            </td>
+                                            <td class="p-3 text-xs">
+                                                ${sem.docentePusoActividad ? `
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="px-2 py-0.5 rounded ${sem.autoevaluacion.realizada ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-rose-950 text-rose-300 border border-rose-800'}">${sem.autoevaluacion.realizada ? 'Realizada' : 'Pendiente'}</span>
+                                                        <span class="text-slate-400">Planteo: ${sem.autoevaluacion.fechaPlanteo || '-'}</span>
+                                                        <span class="text-slate-400">Realizada el: ${sem.autoevaluacion.diaRealizado || '-'}</span>
+                                                        <span class="bg-sky-950 text-sky-300 border border-sky-800 px-2 py-0.5 rounded font-bold">Nota: ${sem.autoevaluacion.nota || '-'}</span>
+                                                    </div>
+                                                ` : '<span class="text-slate-500 italic">No aplica</span>'}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }
+                                return rows;
+                            })()}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        window.selectGlobalMateria = function(mId) {
+            currentGlobalMateria = mId;
+            renderGlobalTPsView();
+        }
+
+        function escapePrintHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function printStatusPill(text, tone = 'neutral') {
+            const cls = tone === 'ok' ? 'ok' : tone === 'warn' ? 'warn' : tone === 'danger' ? 'danger' : 'neutral';
+            return `<span class="pill ${cls}">${escapePrintHtml(text)}</span>`;
+        }
+
+        window.printCurrentSemana = function() {
+            const periodo = getPeriodoActual();
+            if (!periodo) return;
+
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('No se pudo cargar el generador PDF. Verifica tu conexión a Internet e inténtalo nuevamente.');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+
+            const semana = currentSemana;
+            const periodoTexto = periodoLabel(periodo);
+            const rangoGeneral = MATERIAS_CONFIG.map(m => appData[m.id]?.semanas?.[semana]?.rangoFechas).find(Boolean) || getDefaultRangoFechas(semana);
+            const fechaImpresion = new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+
+            const PAGE_W = 210;
+            const PAGE_H = 297;
+            const MX = 7;
+            const CONTENT_W = PAGE_W - MX * 2;
+            const CARD_GAP = 2.3;
+            const CARD_H = 54.5;
+
+            const clean = v => String(v ?? '').replace(/\s+/g, ' ').trim();
+            const short = (v, max = 56) => {
+                const s = clean(v);
+                return s.length > max ? s.slice(0, max - 1) + '…' : (s || '—');
+            };
+            const dateLabel = v => clean(v) || '—';
+
+            function text(x, y, value, size = 8, style = 'normal', align = 'left') {
+                doc.setFont('helvetica', style);
+                doc.setFontSize(size);
+                doc.setTextColor(20, 20, 20);
+                doc.text(clean(value), x, y, { align });
+            }
+
+            function pill(x, y, label) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(6.4);
+                const padX = 2;
+                const w = doc.getTextWidth(clean(label)) + padX * 2;
+                doc.roundedRect(x, y - 3.3, w, 5, 2.1, 2.1, 'S');
+                doc.text(clean(label), x + padX, y);
+                return w;
+            }
+
+            // Encabezado
+            text(MX, 8, 'FADENA · LICENCIATURA EN CIBERDEFENSA', 9.5, 'bold');
+            text(MX, 14.5, `Seguimiento semanal · Semana ${semana}`, 15, 'bold');
+            text(MX, 20.5, `Período: ${periodoTexto}`, 7.4, 'bold');
+            text(MX + 78, 20.5, `Rango: ${rangoGeneral}`, 7.4, 'normal');
+            text(PAGE_W - MX, 20.5, `Materias: ${MATERIAS_CONFIG.length}`, 7.4, 'normal', 'right');
+            doc.setLineWidth(0.6);
+            doc.line(MX, 23, PAGE_W - MX, 23);
+
+            const eventoLabels = {
+                normal: 'Actividad normal / TP',
+                parcial1: 'Parcial 1',
+                parcial2: 'Parcial 2',
+                recuperatorio: 'Recuperatorio',
+                otro: 'Otro hito académico'
+            };
+
+            let y = 26;
+            MATERIAS_CONFIG.forEach((m, idx) => {
+                const md = appData[m.id] || {};
+                const sd = md.semanas?.[semana] || createDefaultSemana(semana);
+                const evento = sd.eventoSemana || { tipo: 'normal', detalle: '' };
+                const tipo = evento.tipo || 'normal';
+                const examenKey = tipo === 'parcial1' ? 'parcial1' : tipo === 'parcial2' ? 'parcial2' : tipo === 'recuperatorio' ? 'recup' : null;
+                const examen = examenKey ? (md[examenKey] || {}) : null;
+                const tp = sd.tp || {};
+                const au = sd.autoevaluacion || {};
+                const links = (sd.youtubeLinks || []).filter(v => clean(v));
+
+                doc.setLineWidth(0.3);
+                doc.roundedRect(MX, y, CONTENT_W, CARD_H, 2, 2, 'S');
+
+                text(MX + 2.5, y + 5, m.nombre, 9, 'bold');
+                text(PAGE_W - MX - 2.5, y + 5, `Semana ${semana} · ${sd.rangoFechas || rangoGeneral}`, 6.4, 'bold', 'right');
+                doc.setLineWidth(0.15);
+                doc.line(MX + 2, y + 7, PAGE_W - MX - 2, y + 7);
+
+                let cy = y + 11.4;
+                text(MX + 2.5, cy, 'Actividad semanal:', 7.5, 'bold');
+                const px = MX + 33;
+
+                if (!sd.docentePusoActividad) {
+                    pill(px, cy, 'Sin actividad docente');
+                    cy += 5.5;
+                } else if (examenKey) {
+                    pill(px, cy, eventoLabels[tipo]);
+                    cy += 5.5;
+                    text(MX + 4, cy, `Fecha: ${dateLabel(examen?.fecha)}   Horario: ${short(examen?.hora, 28)}   Nota: ${short(examen?.nota, 12)}`, 6.7, 'normal');
+                    cy += 4.6;
+                } else if (tipo === 'otro') {
+                    pill(px, cy, 'Otro hito académico');
+                    cy += 5.5;
+                    text(MX + 4, cy, `Detalle: ${short(evento.detalle, 95)}`, 6.7, 'normal');
+                    cy += 4.6;
+                } else {
+                    const estado = !tp.existe ? 'Sin TP' : tp.entregado ? 'TP entregado' : 'TP pendiente';
+                    pill(px, cy, estado);
+                    cy += 5.2;
+                    if (tp.existe) {
+                        text(MX + 4, cy, `Planteo: ${dateLabel(tp.fechaPlanteo)}   Realizado: ${dateLabel(tp.diaRealizado)}   Evaluado: ${tp.evaluado ? 'Sí' : 'No'}   Nota: ${short(tp.nota, 12)}`, 6.5, 'normal');
+                        cy += 4.5;
+                    }
+                }
+
+                text(MX + 2.5, cy, 'Autoevaluación:', 7.3, 'bold');
+                if (sd.docentePusoActividad && au.obligatoria !== false) {
+                    pill(MX + 29, cy, au.realizada ? 'Realizada' : 'Pendiente');
+                    cy += 5;
+                    text(MX + 4, cy, `Vencimiento: ${dateLabel(au.fechaPlanteo)}   Realizada: ${dateLabel(au.diaRealizado)}   Nota: ${short(au.nota, 12)}`, 6.4, 'normal');
+                    cy += 4.3;
+                } else {
+                    pill(MX + 29, cy, 'No aplica');
+                    cy += 5.2;
+                }
+
+                if (links.length) {
+                    text(MX + 2.5, cy, `Material audiovisual: ${links.length} enlace(s)`, 6.2, 'bold');
+                    cy += 3.7;
+                    text(MX + 4, cy, short(links[0], 105), 5.7, 'normal');
+                    cy += 3.4;
+                    if (links.length > 1) {
+                        text(MX + 4, cy, short(links[1], 105), 5.7, 'normal');
+                        cy += 3.4;
+                    }
+                }
+
+                // Zona de notas siempre consistente
+                const notesTop = y + 30.5;
+                text(MX + 2.5, notesTop, 'Notas / recordatorios:', 7.4, 'bold');
+                doc.setLineWidth(0.12);
+                for (let i = 0; i < 5; i++) {
+                    const ly = notesTop + 5.4 + i * 4.7;
+                    doc.setDrawColor(130, 130, 130);
+                    doc.line(MX + 3, ly, PAGE_W - MX - 3, ly);
+                }
+                doc.setDrawColor(0, 0, 0);
+
+                y += CARD_H + CARD_GAP;
+            });
+
+            // Pie dentro del A4, sin generar otra página
+            doc.setLineWidth(0.2);
+            doc.line(MX, PAGE_H - 7, PAGE_W - MX, PAGE_H - 7);
+            text(MX, PAGE_H - 4.2, 'Organizador Académico FADENA', 5.8, 'normal');
+            text(PAGE_W - MX, PAGE_H - 4.2, `Impreso: ${fechaImpresion}`, 5.8, 'normal', 'right');
+
+            const filename = `FADENA_Semana_${semana}_${periodo.anio || 'periodo'}.pdf`;
+            const blobUrl = doc.output('bloburl');
+            const w = window.open(blobUrl, '_blank');
+            if (!w) {
+                doc.save(filename);
+                showToast('PDF A4 generado. Revisa tus descargas.', 'fa-file-pdf');
+            } else {
+                showToast('PDF A4 generado correctamente', 'fa-file-pdf');
+            }
+        };
+
+        function showToast(message, icon = 'fa-circle-check') {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-message');
+            const iconEl = document.getElementById('toast-icon');
+
+            msgEl.innerText = message;
+            iconEl.className = `fa-solid ${icon} text-sky-400 text-lg`;
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        // Puente seguro entre la aplicación local y el módulo de Firebase.
+        window.getFadenaRootData = function() {
+            return JSON.parse(JSON.stringify(rootData));
+        };
+
+        window.applyFadenaRootData = function(cloudData) {
+            if (!cloudData || typeof cloudData !== 'object' || !cloudData.periodos) return false;
+            rootData = cloudData;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(rootData));
+            const periodoId = rootData.currentPeriodoId || Object.keys(rootData.periodos)[0];
+            activatePeriodo(periodoId, false);
+            renderPeriodoSelector();
+            renderSemanaSelector();
+            renderAll();
+            checkAcademicAlerts();
+            return true;
+        };
+
+        window.setFirebaseVisualStatus = function(state, label) {
+            const dot = document.getElementById('firebase-status-dot');
+            const userLabel = document.getElementById('firebase-user-label');
+            if (userLabel && label) userLabel.textContent = label;
+            if (!dot) return;
+            const colors = {
+                local: 'bg-slate-500',
+                syncing: 'bg-amber-400',
+                synced: 'bg-emerald-400',
+                error: 'bg-rose-500'
+            };
+            dot.className = `w-2.5 h-2.5 rounded-full ${colors[state] || colors.local}`;
+        };
+
+        window.fadenaAppReady = false;
+        window.onload = function() {
+            initApp();
+            window.fadenaAppReady = true;
+            window.dispatchEvent(new Event('fadena-ready'));
+        };
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import {
+            getAuth,
+            GoogleAuthProvider,
+            signInWithPopup,
+            signOut,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            onSnapshot,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDudyCujbmRO_gTJJPGDT7sVR6QHZ8qz_c",
+            authDomain: "fadena-organizador-2026.firebaseapp.com",
+            projectId: "fadena-organizador-2026",
+            storageBucket: "fadena-organizador-2026.firebasestorage.app",
+            messagingSenderId: "1090958136660",
+            appId: "1:1090958136660:web:7103afebd60c15bc6364c1"
+        };
+
+        const firebaseApp = initializeApp(firebaseConfig);
+        const auth = getAuth(firebaseApp);
+        const db = getFirestore(firebaseApp);
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+
+        let currentUser = null;
+        let remoteUnsubscribe = null;
+        let saveTimer = null;
+        let applyingRemote = false;
+        let lastRemoteJSON = '';
+
+        function cloudDocRef(uid) {
+            return doc(db, 'users', uid, 'apps', 'fadena-organizador');
+        }
+
+        function updateAuthUI(user) {
+            const login = document.getElementById('firebase-login-btn');
+            const sync = document.getElementById('firebase-sync-btn');
+            const logout = document.getElementById('firebase-logout-btn');
+            if (user) {
+                if (login) login.classList.add('hidden');
+                if (sync) sync.classList.remove('hidden');
+                if (logout) logout.classList.remove('hidden');
+                window.setFirebaseVisualStatus?.('synced', user.displayName || user.email || 'Google conectado');
+            } else {
+                if (login) login.classList.remove('hidden');
+                if (sync) sync.classList.add('hidden');
+                if (logout) logout.classList.add('hidden');
+                window.setFirebaseVisualStatus?.('local', 'Modo local');
+            }
+        }
+
+        async function saveToCloud(showMessage = false) {
+            if (!currentUser || applyingRemote) return;
+            const payload = window.getFadenaRootData?.();
+            if (!payload) return;
+            const json = JSON.stringify(payload);
+            if (json === lastRemoteJSON) {
+                if (showMessage) window.showToast?.('La nube ya está actualizada', 'fa-cloud');
+                return;
+            }
+            try {
+                window.setFirebaseVisualStatus?.('syncing', 'Sincronizando…');
+                await setDoc(cloudDocRef(currentUser.uid), {
+                    payload,
+                    schemaVersion: payload.version || 7,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+                lastRemoteJSON = json;
+                window.setFirebaseVisualStatus?.('synced', currentUser.displayName || currentUser.email || 'Sincronizado');
+                if (showMessage) window.showToast?.('Datos sincronizados con Firestore', 'fa-cloud-arrow-up');
+            } catch (error) {
+                console.error('Error al guardar en Firestore:', error);
+                window.setFirebaseVisualStatus?.('error', 'Error de nube');
+                if (showMessage) window.showToast?.('No se pudo guardar en Firestore', 'fa-triangle-exclamation');
+            }
+        }
+
+        async function initialCloudSync(user) {
+            const ref = cloudDocRef(user.uid);
+            const snap = await getDoc(ref);
+            if (snap.exists() && snap.data()?.payload) {
+                const remote = snap.data().payload;
+                applyingRemote = true;
+                try {
+                    window.applyFadenaRootData?.(remote);
+                    lastRemoteJSON = JSON.stringify(remote);
+                } finally {
+                    applyingRemote = false;
+                }
+                window.showToast?.('Datos recuperados de Firestore', 'fa-cloud-arrow-down');
+            } else {
+                await saveToCloud(false);
+                window.showToast?.('Primer respaldo creado en Firestore', 'fa-cloud-arrow-up');
+            }
+        }
+
+        function startRealtimeListener(user) {
+            if (remoteUnsubscribe) remoteUnsubscribe();
+            remoteUnsubscribe = onSnapshot(cloudDocRef(user.uid), (snap) => {
+                if (!snap.exists() || !snap.data()?.payload) return;
+                const remote = snap.data().payload;
+                const json = JSON.stringify(remote);
+                if (json === lastRemoteJSON) return;
+                applyingRemote = true;
+                try {
+                    window.applyFadenaRootData?.(remote);
+                    lastRemoteJSON = json;
+                    window.setFirebaseVisualStatus?.('synced', user.displayName || user.email || 'Sincronizado');
+                } finally {
+                    applyingRemote = false;
+                }
+            }, (error) => {
+                console.error('Error escuchando Firestore:', error);
+                window.setFirebaseVisualStatus?.('error', 'Error de conexión');
+            });
+        }
+
+        window.firebaseQueueSave = function() {
+            if (!currentUser || applyingRemote) return;
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => saveToCloud(false), 800);
+        };
+
+        window.firebaseSyncNow = function() {
+            saveToCloud(true);
+        };
+
+        window.firebaseLogin = async function() {
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error('Error de inicio de sesión:', error);
+                window.setFirebaseVisualStatus?.('error', 'No se pudo ingresar');
+                window.showToast?.('No se pudo iniciar sesión con Google', 'fa-triangle-exclamation');
+            }
+        };
+
+        window.firebaseLogout = async function() {
+            try {
+                await signOut(auth);
+                window.showToast?.('Sesión de Google cerrada. Los datos locales se conservan.', 'fa-right-from-bracket');
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+            }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!window.fadenaAppReady) {
+                await new Promise(resolve => window.addEventListener('fadena-ready', resolve, { once: true }));
+            }
+            currentUser = user;
+            updateAuthUI(user);
+            if (remoteUnsubscribe) {
+                remoteUnsubscribe();
+                remoteUnsubscribe = null;
+            }
+            if (!user) return;
+            try {
+                window.setFirebaseVisualStatus?.('syncing', 'Conectando…');
+                await initialCloudSync(user);
+                startRealtimeListener(user);
+                window.setFirebaseVisualStatus?.('synced', user.displayName || user.email || 'Sincronizado');
+            } catch (error) {
+                console.error('Error inicializando Firestore:', error);
+                window.setFirebaseVisualStatus?.('error', 'Error de Firestore');
+                window.showToast?.('No se pudo conectar con Firestore', 'fa-triangle-exclamation');
+            }
+        });
+    </script>
+
+</body>
+</html>
+```eof
