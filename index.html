@@ -38,6 +38,16 @@
     </script>
     <!-- jsPDF para generar una hoja A4 real -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- PWA -->
+    <meta name="theme-color" content="#082f49">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FADENA">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-full flex flex-col transition-colors duration-200">
 
@@ -80,6 +90,9 @@
                         <i class="fa-solid fa-right-from-bracket"></i>
                     </button>
                 </div>
+                <button id="pwa-install-btn" onclick="window.installFadenaPWA()" title="Instalar como app" class="hidden px-3 py-2.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/60 rounded-xl transition text-xs font-semibold">
+                    <i class="fa-solid fa-mobile-screen-button mr-1"></i> Instalar app
+                </button>
                 <button onclick="exportData()" title="Descargar Respaldo" class="p-2.5 bg-slate-900/80 hover:bg-slate-800 text-sky-300 border border-slate-700 rounded-xl transition">
                     <i class="fa-solid fa-download"></i>
                 </button>
@@ -1620,6 +1633,66 @@
                 window.showToast?.('No se pudo conectar con Firestore', 'fa-triangle-exclamation');
             }
         });
+    </script>
+
+
+    <script>
+        // ===== PWA / INSTALACIÓN EN ANDROID =====
+        let deferredFadenaInstallPrompt = null;
+
+        function isStandaloneMode() {
+            return window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone === true;
+        }
+
+        function updatePwaInstallButton() {
+            const btn = document.getElementById('pwa-install-btn');
+            if (!btn) return;
+            if (isStandaloneMode()) {
+                btn.classList.add('hidden');
+                return;
+            }
+            if (deferredFadenaInstallPrompt) btn.classList.remove('hidden');
+            else btn.classList.add('hidden');
+        }
+
+        window.addEventListener('beforeinstallprompt', (event) => {
+            event.preventDefault();
+            deferredFadenaInstallPrompt = event;
+            updatePwaInstallButton();
+        });
+
+        window.installFadenaPWA = async function() {
+            if (!deferredFadenaInstallPrompt) {
+                window.showToast?.('Usá el menú del navegador → Instalar app / Agregar a pantalla principal', 'fa-mobile-screen-button');
+                return;
+            }
+            deferredFadenaInstallPrompt.prompt();
+            const result = await deferredFadenaInstallPrompt.userChoice;
+            deferredFadenaInstallPrompt = null;
+            updatePwaInstallButton();
+            if (result?.outcome === 'accepted') {
+                window.showToast?.('FADENA se está instalando como app', 'fa-mobile-screen-button');
+            }
+        };
+
+        window.addEventListener('appinstalled', () => {
+            deferredFadenaInstallPrompt = null;
+            updatePwaInstallButton();
+            window.showToast?.('FADENA instalada correctamente', 'fa-circle-check');
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    await navigator.serviceWorker.register('./sw.js', { scope: './' });
+                    console.info('PWA FADENA: service worker registrado');
+                } catch (error) {
+                    console.error('PWA FADENA: no se pudo registrar el service worker', error);
+                }
+                updatePwaInstallButton();
+            });
+        }
     </script>
 
 </body>
