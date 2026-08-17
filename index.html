@@ -96,11 +96,11 @@
                 <button onclick="exportData()" title="Descargar Respaldo" class="p-2.5 bg-slate-900/80 hover:bg-slate-800 text-sky-300 border border-slate-700 rounded-xl transition">
                     <i class="fa-solid fa-download"></i>
                 </button>
-                <button onclick="importDataPrompt()" title="Cargar Respaldo" class="p-2.5 bg-slate-900/80 hover:bg-slate-800 text-sky-300 border border-slate-700 rounded-xl transition">
+                <button onclick="importDataPrompt()" title="Restaurar respaldo" class="p-2.5 bg-slate-900/80 hover:bg-slate-800 text-sky-300 border border-slate-700 rounded-xl transition">
                     <i class="fa-solid fa-upload"></i>
                 </button>
-                <button onclick="resetData()" title="Restablecer datos" class="p-2.5 bg-slate-900/80 hover:bg-red-950/80 text-slate-400 hover:text-red-400 border border-slate-700 rounded-xl transition">
-                    <i class="fa-solid fa-rotate-right"></i>
+                <button onclick="switchTab('dashboard'); document.getElementById('periodo-selector')?.focus();" title="Historial de períodos" class="p-2.5 bg-slate-900/80 hover:bg-slate-800 text-violet-300 border border-slate-700 rounded-xl transition">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
                 </button>
             </div>
         </div>
@@ -137,21 +137,32 @@
                 </div>
             </div>
 
-            <!-- Selector y gestión de período académico -->
+            <!-- Selector e historial de períodos académicos -->
             <div class="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 p-5">
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div>
-                        <p class="text-[10px] uppercase tracking-widest text-sky-400 font-bold">Período académico activo</p>
+                <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                    <div class="flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <p class="text-[10px] uppercase tracking-widest text-sky-400 font-bold">Historial académico</p>
+                            <span id="periodo-estado-badge" class="text-[10px] px-2 py-1 rounded-full border font-bold">ACTIVO</span>
+                        </div>
                         <div class="flex flex-wrap items-center gap-3 mt-1">
                             <select id="periodo-selector" onchange="window.changePeriodo(this.value)" class="bg-slate-950 border border-sky-500/40 text-white rounded-xl px-3 py-2 text-sm outline-none font-bold shadow-sm"></select>
                             <span id="periodo-materias-badge" class="text-xs bg-sky-950 text-sky-300 border border-sky-800 px-3 py-1.5 rounded-full font-semibold">0 materias</span>
                             <span id="periodo-semanas-badge" class="text-xs bg-slate-950 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-full font-semibold">17 semanas</span>
                         </div>
-                        <p id="periodo-resumen" class="text-xs text-slate-400 mt-2">Cada período conserva sus materias, semanas, docentes, notas y actividades por separado.</p>
+                        <p id="periodo-resumen" class="text-xs text-slate-400 mt-2">Cada período conserva su propia historia académica.</p>
+                        <div id="periodo-historico-aviso" class="hidden mt-3 rounded-xl border border-violet-700/50 bg-violet-950/30 px-3 py-2 text-xs text-violet-200">
+                            <i class="fa-solid fa-clock-rotate-left mr-1"></i> Estás consultando un período finalizado. Sus datos están protegidos contra cambios accidentales.
+                        </div>
                     </div>
-                    <button onclick="window.createPeriodo()" class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-sky-600 hover:bg-sky-500 text-white transition shadow-sm">
-                        <i class="fa-solid fa-folder-plus mr-2"></i> Nuevo período
-                    </button>
+                    <div class="flex flex-wrap gap-2">
+                        <button id="periodo-action-btn" onclick="window.periodoPrimaryAction()" class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-emerald-700 hover:bg-emerald-600 text-white transition shadow-sm">
+                            <i class="fa-solid fa-check mr-2"></i> Finalizar período
+                        </button>
+                        <button onclick="window.createPeriodo()" class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-sky-600 hover:bg-sky-500 text-white transition shadow-sm">
+                            <i class="fa-solid fa-folder-plus mr-2"></i> Nuevo período
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -305,11 +316,12 @@
         ];
 
         const DEFAULT_TOTAL_SEMANAS = 17;
-        const STORAGE_KEY = 'fadena_ciberdefensa_academico_v7';
+        const STORAGE_KEY = 'fadena_ciberdefensa_academico_v8';
+        const PREVIOUS_STORAGE_KEY_V7 = 'fadena_ciberdefensa_academico_v7';
         const PREVIOUS_STORAGE_KEY_V6 = 'fadena_ciberdefensa_academico_v6';
         const PREVIOUS_STORAGE_KEY = 'fadena_ciberdefensa_academico_v5';
         const LEGACY_STORAGE_KEY = 'fadena_ciberdefensa_2026_data_v3';
-        let rootData = { version: 7, currentPeriodoId: '2026-2', periodos: {} };
+        let rootData = { version: 8, currentPeriodoId: '2026-2', activePeriodoId: '2026-2', periodos: {} };
         let appData = {};
         let MATERIAS_CONFIG = [];
         let currentPeriodoId = '2026-2';
@@ -395,12 +407,13 @@
                 appData = prevApp;
             }
             return {
-                version: 7,
+                version: 8,
                 currentPeriodoId: '2026-2',
+                activePeriodoId: '2026-2',
                 periodos: {
                     '2026-2': {
                         id: '2026-2', anio: 2026, anioCarrera: 2, cuatrimestre: 2,
-                        nombre: '2.º año · 2.º cuatrimestre', fechaInicio: '2026-08-17',
+                        nombre: '2.º año · 2.º cuatrimestre', fechaInicio: '2026-08-17', estado: 'activo',
                         materias, data
                     }
                 }
@@ -430,6 +443,42 @@
             });
         }
 
+        const ESTADO_LABELS = { activo: 'ACTIVO', planificado: 'PLANIFICADO', finalizado: 'FINALIZADO' };
+
+        function normalizePeriodoStates() {
+            if (!rootData || !rootData.periodos) return;
+            const ids = Object.keys(rootData.periodos);
+            if (!rootData.activePeriodoId) {
+                rootData.activePeriodoId = rootData.currentPeriodoId && rootData.periodos[rootData.currentPeriodoId] ? rootData.currentPeriodoId : ids[0];
+            }
+            ids.forEach(id => {
+                const p = rootData.periodos[id];
+                if (!p.estado) p.estado = id === rootData.activePeriodoId ? 'activo' : 'finalizado';
+            });
+            const activos = ids.filter(id => rootData.periodos[id].estado === 'activo');
+            if (activos.length === 0 && rootData.activePeriodoId && rootData.periodos[rootData.activePeriodoId]) {
+                rootData.periodos[rootData.activePeriodoId].estado = 'activo';
+            } else if (activos.length > 1) {
+                const keep = rootData.activePeriodoId && activos.includes(rootData.activePeriodoId) ? rootData.activePeriodoId : activos[0];
+                activos.forEach(id => { if (id !== keep) rootData.periodos[id].estado = 'finalizado'; });
+                rootData.activePeriodoId = keep;
+            } else if (activos.length === 1) {
+                rootData.activePeriodoId = activos[0];
+            }
+            rootData.version = 8;
+        }
+
+        function isPeriodoEditable() {
+            return getPeriodoActual()?.estado !== 'finalizado';
+        }
+
+        function ensurePeriodoEditable() {
+            if (isPeriodoEditable()) return true;
+            showToast('Período finalizado: consulta histórica protegida', 'fa-lock');
+            renderAll();
+            return false;
+        }
+
         function activatePeriodo(periodoId, render = true) {
             const periodo = rootData.periodos[periodoId];
             if (!periodo) return;
@@ -456,26 +505,75 @@
         function renderPeriodoSelector() {
             const sel = document.getElementById('periodo-selector');
             if (!sel) return;
-            const periodos = Object.values(rootData.periodos).sort((a,b) => (a.anio-b.anio) || (a.cuatrimestre-b.cuatrimestre));
-            sel.innerHTML = periodos.map(p => `<option value="${p.id}">${periodoLabel(p)}</option>`).join('');
+            normalizePeriodoStates();
+            const periodos = Object.values(rootData.periodos).sort((a,b) => (b.anio-a.anio) || (b.cuatrimestre-a.cuatrimestre));
+            sel.innerHTML = periodos.map(p => `<option value="${p.id}">${periodoLabel(p)} — ${ESTADO_LABELS[p.estado] || 'ACTIVO'}</option>`).join('');
             sel.value = currentPeriodoId;
             const p = getPeriodoActual();
+            if (!p) return;
             const mb = document.getElementById('periodo-materias-badge');
             const sb = document.getElementById('periodo-semanas-badge');
             const resumen = document.getElementById('periodo-resumen');
             const title = document.getElementById('dashboard-periodo-title');
             const footer = document.getElementById('footer-periodo');
+            const estadoBadge = document.getElementById('periodo-estado-badge');
+            const historico = document.getElementById('periodo-historico-aviso');
+            const actionBtn = document.getElementById('periodo-action-btn');
             if (mb) mb.innerText = `${MATERIAS_CONFIG.length} materia${MATERIAS_CONFIG.length === 1 ? '' : 's'}`;
             if (sb) sb.innerText = `${getTotalSemanas()} semanas`;
-            if (resumen) resumen.innerText = `${periodoLabel(p)} · ${MATERIAS_CONFIG.length} materias cargadas · ${getTotalSemanas()} semanas actuales.`;
+            if (resumen) resumen.innerText = `${periodoLabel(p)} · ${MATERIAS_CONFIG.length} materias · ${getTotalSemanas()} semanas · historial conservado.`;
             if (title) title.innerText = `Panel de Control Académico ${p.anio}`;
             if (footer) footer.innerText = `${p.anio} FADENA • Licenciatura en Ciberdefensa - Facultad de Defensa Nacional`;
+            if (estadoBadge) {
+                estadoBadge.innerText = ESTADO_LABELS[p.estado] || 'ACTIVO';
+                const cls = p.estado === 'activo' ? 'bg-emerald-950 text-emerald-300 border-emerald-700' : p.estado === 'planificado' ? 'bg-sky-950 text-sky-300 border-sky-700' : 'bg-violet-950 text-violet-300 border-violet-700';
+                estadoBadge.className = `text-[10px] px-2 py-1 rounded-full border font-bold ${cls}`;
+            }
+            if (historico) historico.classList.toggle('hidden', p.estado !== 'finalizado');
+            if (actionBtn) {
+                if (p.estado === 'activo') {
+                    actionBtn.innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i> Finalizar período';
+                    actionBtn.className = 'px-4 py-2.5 rounded-xl text-sm font-semibold bg-emerald-700 hover:bg-emerald-600 text-white transition shadow-sm';
+                } else if (p.estado === 'planificado') {
+                    actionBtn.innerHTML = '<i class="fa-solid fa-play mr-2"></i> Activar período';
+                    actionBtn.className = 'px-4 py-2.5 rounded-xl text-sm font-semibold bg-sky-700 hover:bg-sky-600 text-white transition shadow-sm';
+                } else {
+                    actionBtn.innerHTML = '<i class="fa-solid fa-lock-open mr-2"></i> Reabrir y activar';
+                    actionBtn.className = 'px-4 py-2.5 rounded-xl text-sm font-semibold bg-violet-700 hover:bg-violet-600 text-white transition shadow-sm';
+                }
+            }
         }
 
         window.changePeriodo = function(periodoId) {
             activatePeriodo(periodoId, true);
             saveData(false);
             showToast(`Período ${getPeriodoActual().anio} cargado`, 'fa-folder-open');
+        };
+
+        window.periodoPrimaryAction = function() {
+            const p = getPeriodoActual();
+            if (!p) return;
+            normalizePeriodoStates();
+            if (p.estado === 'activo') {
+                if (!confirm(`¿Finalizar ${periodoLabel(p)}?\n\nSeguirá disponible en el historial, pero quedará protegido contra cambios accidentales.`)) return;
+                p.estado = 'finalizado';
+                if (rootData.activePeriodoId === p.id) rootData.activePeriodoId = null;
+                saveData(false);
+                renderAll();
+                showToast('Período finalizado y conservado en el historial', 'fa-box-archive');
+                return;
+            }
+            const activo = Object.values(rootData.periodos).find(x => x.estado === 'activo' && x.id !== p.id);
+            const verbo = p.estado === 'finalizado' ? 'reabrir y activar' : 'activar';
+            let msg = `¿${verbo.charAt(0).toUpperCase()+verbo.slice(1)} ${periodoLabel(p)}?`;
+            if (activo) msg += `\n\nEl período actualmente activo (${periodoLabel(activo)}) pasará a FINALIZADO, pero conservará todos sus datos.`;
+            if (!confirm(msg)) return;
+            if (activo) activo.estado = 'finalizado';
+            p.estado = 'activo';
+            rootData.activePeriodoId = p.id;
+            saveData(false);
+            renderAll();
+            showToast('Período activado', 'fa-play');
         };
 
         window.createPeriodo = function() {
@@ -497,10 +595,7 @@
                 const nombre = (prompt(`Nombre de la materia ${i} de ${cantidad}:`, `Materia ${i}`) || `Materia ${i}`).trim();
                 materias.push({ id: slugifyMateria(nombre, i), nombre, descripcion: '' });
             }
-            const oldPeriodo = currentPeriodoId;
-            const oldApp = appData;
-            const oldMaterias = MATERIAS_CONFIG;
-            const tmpPeriodo = { id, anio, anioCarrera, cuatrimestre, nombre: `${anioCarrera}.º año · ${cuatrimestre}.º cuatrimestre`, fechaInicio, materias, data: null };
+            const tmpPeriodo = { id, anio, anioCarrera, cuatrimestre, nombre: `${anioCarrera}.º año · ${cuatrimestre}.º cuatrimestre`, fechaInicio, estado: 'planificado', materias, data: null };
             rootData.periodos[id] = tmpPeriodo;
             currentPeriodoId = id;
             MATERIAS_CONFIG = materias;
@@ -515,14 +610,18 @@
             renderSemanaSelector();
             renderAll();
             checkAcademicAlerts();
-            showToast(`${anio}: período creado con ${cantidad} materias`, 'fa-folder-plus');
+            showToast(`${anio}: período PLANIFICADO creado con ${cantidad} materias`, 'fa-folder-plus');
         };
 
         function initApp() {
-            const savedV7 = localStorage.getItem(STORAGE_KEY);
+            const savedV8 = localStorage.getItem(STORAGE_KEY);
+            const savedV7 = localStorage.getItem(PREVIOUS_STORAGE_KEY_V7);
             const savedV6 = localStorage.getItem(PREVIOUS_STORAGE_KEY_V6);
             const savedV5 = localStorage.getItem(PREVIOUS_STORAGE_KEY);
-            if (savedV7) {
+            if (savedV8) {
+                try { rootData = JSON.parse(savedV8); }
+                catch(e) { rootData = createDefaultRootData(); }
+            } else if (savedV7) {
                 try { rootData = JSON.parse(savedV7); }
                 catch(e) { rootData = createDefaultRootData(); }
             } else if (savedV6) {
@@ -542,7 +641,8 @@
                 rootData = createDefaultRootData(legacy);
             }
             if (!rootData.periodos || Object.keys(rootData.periodos).length === 0) rootData = createDefaultRootData();
-            activatePeriodo(rootData.currentPeriodoId || Object.keys(rootData.periodos)[0], false);
+            normalizePeriodoStates();
+            activatePeriodo(rootData.currentPeriodoId || rootData.activePeriodoId || Object.keys(rootData.periodos)[0], false);
             saveData(false);
             renderPeriodoSelector();
             renderSemanaSelector();
@@ -551,6 +651,7 @@
         }
 
         function saveData(notify = true) {
+            normalizePeriodoStates();
             const periodo = getPeriodoActual();
             if (periodo) {
                 periodo.data = appData;
@@ -566,29 +667,27 @@
             if (notify) showToast('Cambios guardados correctamente');
         }
 
-        window.resetData = function() {
-            const p = getPeriodoActual();
-            if (!confirm(`¿Restablecer solamente ${periodoLabel(p)}? Se borrarán los datos de este período, no los demás años.`)) return;
-            appData = { __meta: { totalSemanas: DEFAULT_TOTAL_SEMANAS, fechaInicio: p.fechaInicio } };
-            MATERIAS_CONFIG.forEach(m => appData[m.id] = createEmptyMateriaData());
-            p.data = appData;
-            currentSemana = 1;
-            saveData(false);
-            renderSemanaSelector();
-            renderAll();
-            showToast('Período restablecido', 'fa-rotate-right');
-        };
+        function downloadBackup(reason = 'manual', notify = true) {
+            const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0,19);
+            const blob = new Blob([JSON.stringify(rootData, null, 2)], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fadena_ciberdefensa_${reason}_${stamp}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            if (notify) showToast('Respaldo completo descargado', 'fa-download');
+        }
 
         window.exportData = function() {
-            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(rootData, null, 2));
-            const a = document.createElement('a');
-            a.setAttribute('href', dataStr);
-            a.setAttribute('download', `fadena_ciberdefensa_respaldo_completo_${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(a); a.click(); a.remove();
-            showToast('Respaldo completo descargado');
+            downloadBackup('respaldo_completo', true);
         };
 
         window.importDataPrompt = function() {
+            if (!confirm('Antes de restaurar, se descargará automáticamente una copia de seguridad del estado actual.\n\nLuego podrás elegir el archivo JSON que querés restaurar. ¿Continuar?')) return;
+            downloadBackup('antes_de_restaurar', false);
             const input = document.createElement('input');
             input.type = 'file'; input.accept = '.json';
             input.onchange = e => {
@@ -597,11 +696,15 @@
                 reader.onload = ev => {
                     try {
                         const imported = JSON.parse(ev.target.result);
-                        rootData = imported.periodos ? imported : createDefaultRootData(imported);
-                        activatePeriodo(rootData.currentPeriodoId || Object.keys(rootData.periodos)[0], false);
+                        const candidate = imported.periodos ? imported : createDefaultRootData(imported);
+                        if (!candidate.periodos || Object.keys(candidate.periodos).length === 0) throw new Error('Sin períodos');
+                        if (!confirm(`¿Restaurar el respaldo "${file.name}"?\n\nReemplazará el estado actual del organizador y luego se sincronizará con Firestore.`)) return;
+                        rootData = candidate;
+                        normalizePeriodoStates();
+                        activatePeriodo(rootData.currentPeriodoId || rootData.activePeriodoId || Object.keys(rootData.periodos)[0], false);
                         saveData(false); renderPeriodoSelector(); renderSemanaSelector(); renderAll();
-                        showToast('Respaldo importado con éxito');
-                    } catch(err) { alert('El archivo no es válido.'); }
+                        showToast('Respaldo restaurado y listo para sincronizar', 'fa-upload');
+                    } catch(err) { alert('El archivo no es un respaldo válido de FADENA.'); }
                 };
             };
             input.click();
@@ -745,6 +848,7 @@
         }
 
         window.updateDocenteInfo = function(mId, field, val) {
+            if (!ensurePeriodoEditable()) return;
             if (!appData[mId]) appData[mId] = {};
             appData[mId][field] = val;
             saveData(true);
@@ -783,6 +887,7 @@
         }
 
         window.addSemana = function() {
+            if (!ensurePeriodoEditable()) return;
             const nuevaSemana = getTotalSemanas() + 1;
             appData.__meta.totalSemanas = nuevaSemana;
             MATERIAS_CONFIG.forEach(m => {
@@ -795,6 +900,7 @@
         }
 
         window.removeLastSemana = function() {
+            if (!ensurePeriodoEditable()) return;
             const ultimaSemana = getTotalSemanas();
             if (ultimaSemana <= 1) {
                 showToast('Debe existir al menos una semana', 'fa-triangle-exclamation');
@@ -1033,6 +1139,7 @@
         }
 
         window.updateSemanaEvento = function(mId, semana, tipo) {
+            if (!ensurePeriodoEditable()) return;
             const sem = appData[mId]?.semanas?.[semana];
             if (!sem) return;
             if (!sem.eventoSemana) sem.eventoSemana = { tipo: 'normal', detalle: '' };
@@ -1045,6 +1152,7 @@
         };
 
         window.updateSemanaEventoDetalle = function(mId, semana, val) {
+            if (!ensurePeriodoEditable()) return;
             const sem = appData[mId]?.semanas?.[semana];
             if (!sem) return;
             if (!sem.eventoSemana) sem.eventoSemana = { tipo: 'otro', detalle: '' };
@@ -1053,6 +1161,7 @@
         };
 
         window.updateField = function(mId, semana, field, val) {
+            if (!ensurePeriodoEditable()) return;
             if (!appData[mId].semanas[semana]) appData[mId].semanas[semana] = {};
             appData[mId].semanas[semana][field] = val;
             saveData(true);
@@ -1060,12 +1169,14 @@
         }
 
         window.updateYoutubeLink = function(mId, semana, index, val) {
+            if (!ensurePeriodoEditable()) return;
             if (!appData[mId].semanas[semana].youtubeLinks) appData[mId].semanas[semana].youtubeLinks = ['', '', '', ''];
             appData[mId].semanas[semana].youtubeLinks[index] = val;
             saveData(true);
         }
 
         window.updateTPSubField = function(mId, semana, field, val) {
+            if (!ensurePeriodoEditable()) return;
             if (!appData[mId].semanas[semana].tp) appData[mId].semanas[semana].tp = {};
             appData[mId].semanas[semana].tp[field] = val;
             saveData(true);
@@ -1073,12 +1184,14 @@
         }
 
         window.updateAutoSubField = function(mId, semana, field, val) {
+            if (!ensurePeriodoEditable()) return;
             if (!appData[mId].semanas[semana].autoevaluacion) appData[mId].semanas[semana].autoevaluacion = {};
             appData[mId].semanas[semana].autoevaluacion[field] = val;
             saveData(true);
         }
 
         window.updateExamenField = function(mId, examenKey, subField, val) {
+            if (!ensurePeriodoEditable()) return;
             if (!appData[mId]) appData[mId] = {};
             if (!appData[mId][examenKey]) appData[mId][examenKey] = { nota: '', fecha: '', hora: '' };
             appData[mId][examenKey][subField] = val;
@@ -1424,6 +1537,7 @@
         window.applyFadenaRootData = function(cloudData) {
             if (!cloudData || typeof cloudData !== 'object' || !cloudData.periodos) return false;
             rootData = cloudData;
+            normalizePeriodoStates();
             localStorage.setItem(STORAGE_KEY, JSON.stringify(rootData));
             const periodoId = rootData.currentPeriodoId || Object.keys(rootData.periodos)[0];
             activatePeriodo(periodoId, false);

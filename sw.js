@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fadena-organizador-v20';
+const CACHE_NAME = 'fadena-organizador-v21';
 const APP_SHELL = [
   './',
   './index.html',
