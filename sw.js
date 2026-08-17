@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fadena-organizador-v23';
+const CACHE_NAME = 'fadena-organizador-v24';
 const STATIC_ASSETS = [
   './manifest.webmanifest',
   './icons/icon-192.png',

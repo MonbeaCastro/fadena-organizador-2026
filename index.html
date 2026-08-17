@@ -160,6 +160,12 @@
                         <button id="periodo-action-btn" onclick="window.periodoPrimaryAction()" class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-emerald-700 hover:bg-emerald-600 text-white transition shadow-sm">
                             <i class="fa-solid fa-check mr-2"></i> Finalizar período
                         </button>
+                        <button id="periodo-planificar-btn" onclick="window.returnPeriodoToPlanned()" class="hidden px-4 py-2.5 rounded-xl text-sm font-semibold bg-indigo-700 hover:bg-indigo-600 text-white transition shadow-sm">
+                            <i class="fa-solid fa-calendar-plus mr-2"></i> Volver a PLANIFICADO
+                        </button>
+                        <button id="periodo-eliminar-btn" onclick="window.deleteEmptyPeriodo()" class="hidden px-4 py-2.5 rounded-xl text-sm font-semibold bg-rose-950 hover:bg-rose-900 text-rose-200 border border-rose-800 transition shadow-sm">
+                            <i class="fa-solid fa-trash-can mr-2"></i> Eliminar período vacío
+                        </button>
                         <button onclick="window.createPeriodo()" class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-sky-600 hover:bg-sky-500 text-white transition shadow-sm">
                             <i class="fa-solid fa-folder-plus mr-2"></i> Nuevo período
                         </button>
@@ -357,6 +363,17 @@
             return String(date.getUTCDate()).padStart(2, '0') + '/' + String(date.getUTCMonth() + 1).padStart(2, '0');
         }
 
+        function getDefaultRangoFechasForStart(fechaInicio, sem) {
+            const base = parseLocalDate(fechaInicio || '2026-08-17');
+            if (!base) return '';
+            const start = new Date(base);
+            start.setDate(start.getDate() + (sem - 1) * 7);
+            const end = new Date(start);
+            end.setDate(end.getDate() + 6);
+            const fmt = d => String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+            return `${fmt(start)} al ${fmt(end)}`;
+        }
+
         function getDefaultRangoFechas(sem) {
             const inicioPeriodo = new Date(getPeriodoFechaInicio() + 'T00:00:00Z');
             const inicio = new Date(inicioPeriodo);
@@ -539,6 +556,8 @@
             const estadoBadge = document.getElementById('periodo-estado-badge');
             const historico = document.getElementById('periodo-historico-aviso');
             const actionBtn = document.getElementById('periodo-action-btn');
+            const planificarBtn = document.getElementById('periodo-planificar-btn');
+            const eliminarBtn = document.getElementById('periodo-eliminar-btn');
             if (mb) mb.innerText = `${MATERIAS_CONFIG.length} materia${MATERIAS_CONFIG.length === 1 ? '' : 's'}`;
             if (sb) sb.innerText = `${getTotalSemanas()} semanas`;
             if (resumen) resumen.innerText = `${periodoLabel(p)} · ${MATERIAS_CONFIG.length} materias · ${getTotalSemanas()} semanas · historial conservado.`;
@@ -561,6 +580,15 @@
                     actionBtn.innerHTML = '<i class="fa-solid fa-lock-open mr-2"></i> Reabrir y activar';
                     actionBtn.className = 'px-4 py-2.5 rounded-xl text-sm font-semibold bg-violet-700 hover:bg-violet-600 text-white transition shadow-sm';
                 }
+            }
+            const periodoVacio = !periodoHasAcademicData(p.id);
+            if (planificarBtn) {
+                const puedePlanificar = p.estado === 'finalizado' && periodoVacio;
+                planificarBtn.classList.toggle('hidden', !puedePlanificar);
+            }
+            if (eliminarBtn) {
+                const puedeEliminar = p.estado !== 'activo' && periodoVacio && Object.keys(rootData.periodos || {}).length > 1;
+                eliminarBtn.classList.toggle('hidden', !puedeEliminar);
             }
         }
 
@@ -594,6 +622,94 @@
             saveData(false);
             renderAll();
             showToast('Período activado', 'fa-play');
+        };
+
+        function periodoHasAcademicData(periodoId) {
+            const p = rootData?.periodos?.[periodoId];
+            if (!p) return false;
+            const prevPeriodoId = currentPeriodoId;
+            const prevMaterias = MATERIAS_CONFIG;
+            const prevData = appData;
+            try {
+                const materias = p.materias || [];
+                const data = p.data || {};
+                for (const m of materias) {
+                    const md = data[m.id];
+                    if (!md) continue;
+                    if (String(md.profesor || '').trim() || String(md.contacto || '').trim()) return true;
+                    for (const k of ['parcial1','parcial2','recup']) {
+                        const ex = md[k] || {};
+                        if (String(ex.nota || '').trim() || String(ex.fecha || '').trim() || String(ex.hora || '').trim() || String(ex.objetivoPersonal || '').trim() || String(ex.horaObjetivo || '').trim() && ex.horaObjetivo !== '18:00') return true;
+                    }
+                    const total = Number(data.__meta?.totalSemanas || DEFAULT_TOTAL_SEMANAS);
+                    const fechaInicio = data.__meta?.fechaInicio || p.fechaInicio || '';
+                    for (let s=1; s<=total; s++) {
+                        const sem = md.semanas?.[s];
+                        if (!sem) continue;
+                        const youtube = Array.isArray(sem.youtubeLinks) && sem.youtubeLinks.some(v => String(v || '').trim() !== '');
+                        const tp = sem.tp || {};
+                        const au = sem.autoevaluacion || {};
+                        const evento = sem.eventoSemana || {tipo:'normal', detalle:''};
+                        const esperado = getDefaultRangoFechasForStart(fechaInicio, s);
+                        const rangoModificado = String(sem.rangoFechas || '') && String(sem.rangoFechas || '') !== esperado;
+                        if (youtube || rangoModificado || sem.docentePusoActividad === false || (evento.tipo || 'normal') !== 'normal' || String(evento.detalle || '').trim() ||
+                            tp.existe === true || tp.evaluado === true || tp.entregado === true || String(tp.fechaPlanteo || '').trim() || String(tp.fechaVencimiento || '').trim() || String(tp.objetivoPersonal || '').trim() || String(tp.diaRealizado || '').trim() || String(tp.nota || '').trim() ||
+                            au.realizada === true || String(au.fechaPlanteo || '').trim() || String(au.objetivoPersonal || '').trim() || String(au.diaRealizado || '').trim() || String(au.nota || '').trim()) return true;
+                    }
+                }
+                return false;
+            } finally {
+                currentPeriodoId = prevPeriodoId;
+                MATERIAS_CONFIG = prevMaterias;
+                appData = prevData;
+            }
+        }
+
+        window.returnPeriodoToPlanned = function() {
+            const p = getPeriodoActual();
+            if (!p || p.estado !== 'finalizado') return;
+            if (periodoHasAcademicData(p.id)) {
+                alert('Este período contiene información académica y no puede volver a PLANIFICADO. Para proteger el historial, podés reabrirlo y activarlo si necesitás corregir datos.');
+                return;
+            }
+            if (!confirm(`¿Volver ${periodoLabel(p)} a PLANIFICADO?
+
+El período está vacío. Podrás editar, agregar o quitar materias sin afectar el período activo.`)) return;
+            p.estado = 'planificado';
+            saveData(false);
+            renderAll();
+            showToast('Período vacío vuelto a PLANIFICADO', 'fa-calendar-plus');
+        };
+
+        window.deleteEmptyPeriodo = function() {
+            const p = getPeriodoActual();
+            if (!p) return;
+            if (p.estado === 'activo') {
+                alert('El período ACTIVO no se puede eliminar.');
+                return;
+            }
+            if (Object.keys(rootData.periodos || {}).length <= 1) {
+                alert('Debe conservarse al menos un período académico.');
+                return;
+            }
+            if (periodoHasAcademicData(p.id)) {
+                alert('No se puede eliminar este período porque contiene información académica.');
+                return;
+            }
+            if (!confirm(`¿Eliminar definitivamente ${periodoLabel(p)}?
+
+El período está vacío y solo contiene su estructura/materias sin datos académicos.`)) return;
+            const id = p.id;
+            delete rootData.periodos[id];
+            let destino = rootData.activePeriodoId && rootData.periodos[rootData.activePeriodoId] ? rootData.activePeriodoId : Object.keys(rootData.periodos)[0];
+            currentPeriodoId = destino;
+            rootData.currentPeriodoId = destino;
+            activatePeriodo(destino, false);
+            saveData(false);
+            renderPeriodoSelector();
+            renderSemanaSelector();
+            renderAll();
+            showToast('Período vacío eliminado', 'fa-trash-can');
         };
 
         window.createPeriodo = function() {
@@ -1964,3 +2080,4 @@
 
 </body>
 </html>
+```eof
