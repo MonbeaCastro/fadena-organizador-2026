@@ -130,11 +130,11 @@
                     </div>
                 </div>
                 <!-- Alerta de Vencimiento / Pendientes -->
-                <div id="dashboard-alert-box" class="bg-amber-950/80 border border-amber-600/50 p-4 rounded-xl text-amber-200 text-xs max-w-sm hidden">
+                <div id="dashboard-alert-box" class="bg-amber-950/80 border border-amber-600/50 p-4 rounded-xl text-amber-200 text-xs max-w-xl hidden">
                     <div class="flex items-center gap-2 font-bold mb-1">
-                        <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Alerta Académica:
+                        <i class="fa-solid fa-bell text-amber-400"></i> Planificación y alertas:
                     </div>
-                    <p id="dashboard-alert-text">Tienes autoevaluaciones pendientes en semanas anteriores.</p>
+                    <div id="dashboard-alert-text">Tus próximos objetivos y vencimientos aparecerán aquí.</div>
                 </div>
             </div>
 
@@ -216,9 +216,14 @@
 
             <!-- Materias list card -->
             <div class="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 p-6">
-                <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-sky-300">
-                    <i class="fa-solid fa-shield-halved text-sky-400"></i> Materias, Profesores y Contacto Académico
-                </h3>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <h3 class="text-lg font-bold flex items-center gap-2 text-sky-300">
+                        <i class="fa-solid fa-shield-halved text-sky-400"></i> Materias, Profesores y Contacto Académico
+                    </h3>
+                    <button onclick="window.addMateria()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-sky-700 hover:bg-sky-600 text-white border border-sky-500/40 transition">
+                        <i class="fa-solid fa-plus mr-1"></i> Agregar materia
+                    </button>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="dashboard-materias-list">
                     <!-- Generado dinámicamente -->
                 </div>
@@ -233,7 +238,7 @@
                         <h2 class="text-xl font-bold flex items-center gap-2 text-sky-300">
                             <i class="fa-solid fa-calendar-week text-sky-400"></i> Seguimiento Semanal
                         </h2>
-                        <p class="text-sm text-slate-400">Registra qué ocurre en cada materia durante la semana: actividad normal, TP, parcial, recuperatorio u otro hito, además de videos y autoevaluaciones.</p>
+                        <p class="text-sm text-slate-400">Registra qué ocurre en cada materia durante la semana. Podés separar el <b class="text-slate-300">vencimiento oficial</b> de tu <b class="text-sky-300">objetivo personal</b>; las alertas permanecen dentro de esta aplicación.</p>
                     </div>
                     <!-- Selector de Semana -->
                     <div class="flex flex-wrap items-center gap-2">
@@ -322,7 +327,7 @@
         const PREVIOUS_STORAGE_KEY_V6 = 'fadena_ciberdefensa_academico_v6';
         const PREVIOUS_STORAGE_KEY = 'fadena_ciberdefensa_academico_v5';
         const LEGACY_STORAGE_KEY = 'fadena_ciberdefensa_2026_data_v3';
-        let rootData = { version: 8, currentPeriodoId: '2026-2', activePeriodoId: '2026-2', periodos: {} };
+        let rootData = { version: 9, currentPeriodoId: '2026-2', activePeriodoId: '2026-2', periodos: {} };
         let appData = {};
         let MATERIAS_CONFIG = [];
         let currentPeriodoId = '2026-2';
@@ -367,17 +372,17 @@
                 docentePusoActividad: true,
                 youtubeLinks: ['', '', '', ''],
                 eventoSemana: { tipo: 'normal', detalle: '' },
-                tp: { existe: false, evaluado: false, fechaPlanteo: '', diaRealizado: '', entregado: false, nota: '' },
-                autoevaluacion: { obligatoria: s !== 1, fechaPlanteo: '', diaRealizado: '', realizada: false, nota: '' }
+                tp: { existe: false, evaluado: false, fechaPlanteo: '', fechaVencimiento: '', horaVencimiento: '23:59', objetivoPersonal: '', horaObjetivo: '18:00', diaRealizado: '', entregado: false, nota: '' },
+                autoevaluacion: { obligatoria: s !== 1, fechaPlanteo: '', horaVencimiento: '23:59', objetivoPersonal: '', horaObjetivo: '18:00', diaRealizado: '', realizada: false, nota: '' }
             };
         }
 
         function createEmptyMateriaData() {
             const data = {
                 profesor: '', contacto: '',
-                parcial1: { nota: '', fecha: '', hora: '' },
-                parcial2: { nota: '', fecha: '', hora: '' },
-                recup: { nota: '', fecha: '', hora: '' }, semanas: {}
+                parcial1: { nota: '', fecha: '', hora: '', objetivoPersonal: '', horaObjetivo: '18:00' },
+                parcial2: { nota: '', fecha: '', hora: '', objetivoPersonal: '', horaObjetivo: '18:00' },
+                recup: { nota: '', fecha: '', hora: '', objetivoPersonal: '', horaObjetivo: '18:00' }, semanas: {}
             };
             for (let s = 1; s <= getTotalSemanas(); s++) data.semanas[s] = createDefaultSemana(s);
             return data;
@@ -408,7 +413,7 @@
                 appData = prevApp;
             }
             return {
-                version: 8,
+                version: 9,
                 currentPeriodoId: '2026-2',
                 activePeriodoId: '2026-2',
                 periodos: {
@@ -436,10 +441,24 @@
             appData.__meta.totalSemanas = Math.max(appData.__meta.totalSemanas, maxSemanaExistente);
             MATERIAS_CONFIG.forEach(m => {
                 if (!appData[m.id]) appData[m.id] = createEmptyMateriaData();
+                ['parcial1','parcial2','recup'].forEach(k => {
+                    if (!appData[m.id][k]) appData[m.id][k] = { nota:'', fecha:'', hora:'', objetivoPersonal:'', horaObjetivo:'18:00' };
+                    if (appData[m.id][k].objetivoPersonal === undefined) appData[m.id][k].objetivoPersonal = '';
+                    if (appData[m.id][k].horaObjetivo === undefined) appData[m.id][k].horaObjetivo = '18:00';
+                });
                 if (!appData[m.id].semanas) appData[m.id].semanas = {};
                 for (let s = 1; s <= getTotalSemanas(); s++) {
                     if (!appData[m.id].semanas[s]) appData[m.id].semanas[s] = createDefaultSemana(s);
                     if (!appData[m.id].semanas[s].eventoSemana) appData[m.id].semanas[s].eventoSemana = { tipo: 'normal', detalle: '' };
+                    const tp = appData[m.id].semanas[s].tp || (appData[m.id].semanas[s].tp = {});
+                    if (tp.fechaVencimiento === undefined) tp.fechaVencimiento = '';
+                    if (tp.horaVencimiento === undefined) tp.horaVencimiento = '23:59';
+                    if (tp.objetivoPersonal === undefined) tp.objetivoPersonal = '';
+                    if (tp.horaObjetivo === undefined) tp.horaObjetivo = '18:00';
+                    const au = appData[m.id].semanas[s].autoevaluacion || (appData[m.id].semanas[s].autoevaluacion = {});
+                    if (au.horaVencimiento === undefined) au.horaVencimiento = '23:59';
+                    if (au.objetivoPersonal === undefined) au.objetivoPersonal = '';
+                    if (au.horaObjetivo === undefined) au.horaObjetivo = '18:00';
                 }
             });
         }
@@ -466,7 +485,7 @@
             } else if (activos.length === 1) {
                 rootData.activePeriodoId = activos[0];
             }
-            rootData.version = 8;
+            rootData.version = 9;
         }
 
         function isPeriodoEditable() {
@@ -738,35 +757,73 @@
             else if (currentActiveTab === 'tps') renderGlobalTPsView();
         }
 
-        function checkAcademicAlerts() {
-            let pendingCount = 0;
-            // Detectar autoevaluaciones no realizadas únicamente en semanas ya finalizadas.
-            const inicioPeriodo = new Date(getPeriodoFechaInicio() + 'T00:00:00Z');
-            const hoy = new Date();
-            const hoyUTC = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()));
-            const diasDesdeInicio = Math.floor((hoyUTC - inicioPeriodo) / 86400000);
-            const semanaActual = diasDesdeInicio >= 0 ? Math.floor(diasDesdeInicio / 7) + 1 : 0;
-            const ultimaSemanaFinalizada = Math.min(getTotalSemanas(), Math.max(0, semanaActual - 1));
+        function parseLocalDateTime(fecha, hora = '23:59') {
+            if (!fecha) return null;
+            const h = /^\d{2}:\d{2}$/.test(hora || '') ? hora : '23:59';
+            const d = new Date(`${fecha}T${h}:00`);
+            return isNaN(d.getTime()) ? null : d;
+        }
 
+        function buildPlanningAlerts() {
+            const p = getPeriodoActual();
+            if (!p || p.estado !== 'activo') return [];
+            const now = new Date();
+            const horizon = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+            const alerts = [];
+            const pushAlert = (materia, tipo, fechaPersonal, horaPersonal, fechaOficial, horaOficial, completado, semana = null) => {
+                if (completado) return;
+                const personal = parseLocalDateTime(fechaPersonal, horaPersonal || '18:00');
+                const oficial = parseLocalDateTime(fechaOficial, horaOficial || '23:59');
+                const target = personal || oficial;
+                if (!target) return;
+                if (target > horizon) return;
+                const diffH = (target - now) / 3600000;
+                let nivel = 'proximo', etiqueta = 'Próximo';
+                if (diffH < 0) { nivel = 'vencido'; etiqueta = personal ? 'Objetivo personal vencido' : 'Vencido'; }
+                else if (diffH <= 24) { nivel = 'hoy'; etiqueta = personal ? 'Objetivo personal hoy' : 'Vence hoy'; }
+                else if (diffH <= 48) { nivel = 'manana'; etiqueta = personal ? 'Objetivo personal próximo' : 'Vence pronto'; }
+                alerts.push({ materia, tipo, semana, target, nivel, etiqueta, personal: !!personal, oficial });
+            };
             MATERIAS_CONFIG.forEach(m => {
-                const matData = appData[m.id];
-                if (!matData || !matData.semanas) return;
-                for (let s = 1; s <= ultimaSemanaFinalizada; s++) {
-                    const sem = matData.semanas[s];
-                    if (sem && sem.docentePusoActividad && sem.autoevaluacion && sem.autoevaluacion.obligatoria && !sem.autoevaluacion.realizada) {
-                        pendingCount++;
-                    }
+                const md = appData[m.id];
+                if (!md) return;
+                for (let s=1; s<=getTotalSemanas(); s++) {
+                    const sem = md.semanas?.[s];
+                    if (!sem || !sem.docentePusoActividad) continue;
+                    const tp = sem.tp || {};
+                    if (tp.existe) pushAlert(m.nombre, 'TP', tp.objetivoPersonal, tp.horaObjetivo, tp.fechaVencimiento, tp.horaVencimiento, tp.entregado, s);
+                    const au = sem.autoevaluacion || {};
+                    if (au.obligatoria !== false) pushAlert(m.nombre, 'Autoevaluación', au.objetivoPersonal, au.horaObjetivo, au.fechaPlanteo, au.horaVencimiento, au.realizada, s);
                 }
+                [['parcial1','Parcial 1'],['parcial2','Parcial 2'],['recup','Recuperatorio']].forEach(([k,label]) => {
+                    const ex = md[k] || {};
+                    pushAlert(m.nombre, label, ex.objetivoPersonal, ex.horaObjetivo, ex.fecha, ex.hora?.slice(0,5) || '23:59', !!String(ex.nota || '').trim());
+                });
             });
+            const order = { vencido:0, hoy:1, manana:2, proximo:3 };
+            alerts.sort((a,b) => (order[a.nivel]-order[b.nivel]) || (a.target-b.target));
+            return alerts;
+        }
 
+        function checkAcademicAlerts() {
             const alertBox = document.getElementById('dashboard-alert-box');
             const alertText = document.getElementById('dashboard-alert-text');
-            if (pendingCount > 0) {
-                alertBox.classList.remove('hidden');
-                alertText.innerText = `Tienes ${pendingCount} autoevaluación(es) obligatoria(s) pendientes en semanas anteriores.`;
-            } else {
+            if (!alertBox || !alertText) return;
+            const alerts = buildPlanningAlerts();
+            if (!alerts.length) {
                 alertBox.classList.add('hidden');
+                return;
             }
+            alertBox.classList.remove('hidden');
+            const items = alerts.slice(0,5).map(a => {
+                const fecha = a.target.toLocaleDateString('es-AR', { weekday:'short', day:'2-digit', month:'2-digit' });
+                const hora = a.target.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+                const sem = a.semana ? ` · Sem. ${a.semana}` : '';
+                const personal = a.personal ? ' · planificación personal' : ' · vencimiento oficial';
+                return `<li class="mt-1"><b>${a.etiqueta}:</b> ${a.tipo} · ${a.materia}${sem} — ${fecha} ${hora}${personal}</li>`;
+            }).join('');
+            const extra = alerts.length > 5 ? `<div class="mt-2 text-amber-300">+ ${alerts.length-5} alerta(s) adicional(es)</div>` : '';
+            alertText.innerHTML = `<ul class="list-disc pl-4">${items}</ul>${extra}`;
         }
 
         function updateDashboardStats() {
@@ -816,9 +873,15 @@
                 return `
                     <div class="p-5 rounded-2xl border border-slate-800 bg-slate-950/60 flex flex-col justify-between gap-4 shadow-sm hover:border-sky-500/40 transition">
                         <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <h4 class="font-bold text-sky-200 text-base">${m.nombre}</h4>
-                                <span class="text-[10px] bg-sky-950 text-sky-300 border border-sky-800 px-2 py-0.5 rounded-full font-semibold">2do Cuatrimestre</span>
+                            <div class="flex items-start justify-between gap-2 mb-1">
+                                <div>
+                                    <h4 class="font-bold text-sky-200 text-base">${m.nombre}</h4>
+                                    <span class="text-[10px] bg-sky-950 text-sky-300 border border-sky-800 px-2 py-0.5 rounded-full font-semibold">${getPeriodoActual()?.cuatrimestre || ''}.º cuatrimestre</span>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button onclick="window.editMateria('${m.id}')" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 text-sky-300 hover:border-sky-500" title="Editar materia"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="window.removeMateria('${m.id}')" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 text-rose-300 hover:border-rose-500" title="Quitar materia si está vacía"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
                             </div>
                             <p class="text-xs text-slate-400 mt-1 mb-3">${m.descripcion}</p>
                             
@@ -847,6 +910,71 @@
                 `;
             }).join('');
         }
+
+        function materiaHasUserData(mId) {
+            const md = appData[mId];
+            if (!md) return false;
+            if (String(md.profesor || '').trim() || String(md.contacto || '').trim()) return true;
+            for (const k of ['parcial1','parcial2','recup']) {
+                const ex = md[k] || {};
+                if (String(ex.nota || '').trim() || String(ex.fecha || '').trim() || String(ex.hora || '').trim() || String(ex.objetivoPersonal || '').trim()) return true;
+            }
+            for (let s=1; s<=getTotalSemanas(); s++) if (semanaHasUserData(md.semanas?.[s], s)) return true;
+            return false;
+        }
+
+        window.addMateria = function() {
+            if (!ensurePeriodoEditable()) return;
+            const p = getPeriodoActual();
+            if (!p || !['activo','planificado'].includes(p.estado)) return;
+            const nombre = (prompt('Nombre de la nueva materia:', `Materia ${MATERIAS_CONFIG.length+1}`) || '').trim();
+            if (!nombre) return;
+            const descripcion = (prompt('Descripción breve (opcional):', '') || '').trim();
+            const id = slugifyMateria(nombre, MATERIAS_CONFIG.length+1);
+            const materia = { id, nombre, descripcion };
+            MATERIAS_CONFIG.push(materia);
+            appData[id] = createEmptyMateriaData();
+            currentGlobalMateria = currentGlobalMateria || id;
+            saveData(false);
+            renderAll();
+            showToast(`Materia "${nombre}" agregada`, 'fa-plus');
+        };
+
+        window.editMateria = function(mId) {
+            if (!ensurePeriodoEditable()) return;
+            const m = MATERIAS_CONFIG.find(x => x.id === mId);
+            if (!m) return;
+            const nuevoNombre = (prompt('Nombre de la materia:', m.nombre) || '').trim();
+            if (!nuevoNombre) return;
+            const nuevaDescripcion = prompt('Descripción breve (opcional):', m.descripcion || '');
+            m.nombre = nuevoNombre;
+            m.descripcion = nuevaDescripcion === null ? (m.descripcion || '') : nuevaDescripcion.trim();
+            // El ID interno m.id NO se modifica: todos los datos académicos siguen vinculados al mismo registro.
+            saveData(false);
+            renderAll();
+            showToast('Materia actualizada sin cambiar su ID', 'fa-pen');
+        };
+
+        window.removeMateria = function(mId) {
+            if (!ensurePeriodoEditable()) return;
+            const m = MATERIAS_CONFIG.find(x => x.id === mId);
+            if (!m) return;
+            if (materiaHasUserData(mId)) {
+                alert(`No se puede quitar "${m.nombre}" porque contiene información académica cargada.\n\nPara proteger tu historial, la eliminación queda bloqueada.`);
+                return;
+            }
+            if (MATERIAS_CONFIG.length <= 1) {
+                alert('El período debe conservar al menos una materia.');
+                return;
+            }
+            if (!confirm(`¿Quitar la materia "${m.nombre}"? Está vacía y no se perderán datos académicos.`)) return;
+            MATERIAS_CONFIG = MATERIAS_CONFIG.filter(x => x.id !== mId);
+            delete appData[mId];
+            if (currentGlobalMateria === mId) currentGlobalMateria = MATERIAS_CONFIG[0]?.id || '';
+            saveData(false);
+            renderAll();
+            showToast('Materia vacía eliminada', 'fa-trash-can');
+        };
 
         window.updateDocenteInfo = function(mId, field, val) {
             if (!ensurePeriodoEditable()) return;
@@ -882,8 +1010,8 @@
 
             return youtube || rangoModificado || actividadModificada || eventoModificado ||
                 tp.existe === true || tp.evaluado === true || tp.entregado === true ||
-                String(tp.fechaPlanteo || '').trim() !== '' || String(tp.diaRealizado || '').trim() !== '' || String(tp.nota || '').trim() !== '' ||
-                auto.realizada === true || String(auto.fechaPlanteo || '').trim() !== '' ||
+                String(tp.fechaPlanteo || '').trim() !== '' || String(tp.fechaVencimiento || '').trim() !== '' || String(tp.objetivoPersonal || '').trim() !== '' || String(tp.diaRealizado || '').trim() !== '' || String(tp.nota || '').trim() !== '' ||
+                auto.realizada === true || String(auto.fechaPlanteo || '').trim() !== '' || String(auto.objetivoPersonal || '').trim() !== '' ||
                 String(auto.diaRealizado || '').trim() !== '' || String(auto.nota || '').trim() !== '';
         }
 
@@ -942,8 +1070,8 @@
                     docentePusoActividad: true,
                     youtubeLinks: ['', '', '', ''],
                     eventoSemana: { tipo: 'normal', detalle: '' },
-                    tp: { existe: false, evaluado: false, fechaPlanteo: '', diaRealizado: '', entregado: false, nota: '' },
-                    autoevaluacion: { obligatoria: true, fechaPlanteo: '', diaRealizado: '', realizada: false, nota: '' }
+                    tp: { existe: false, evaluado: false, fechaPlanteo: '', fechaVencimiento: '', horaVencimiento: '23:59', objetivoPersonal: '', horaObjetivo: '18:00', diaRealizado: '', entregado: false, nota: '' },
+                    autoevaluacion: { obligatoria: true, fechaPlanteo: '', horaVencimiento: '23:59', objetivoPersonal: '', horaObjetivo: '18:00', diaRealizado: '', realizada: false, nota: '' }
                 };
 
                 const evento = semData.eventoSemana || { tipo: 'normal', detalle: '' };
@@ -1060,6 +1188,14 @@
                                                 <input type="date" value="${semData.tp.fechaPlanteo || ''}" onchange="window.updateTPSubField('${m.id}', ${currentSemana}, 'fechaPlanteo', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
                                             </div>
                                             <div>
+                                                <label class="block text-slate-400 mb-1">Vencimiento oficial:</label>
+                                                <div class="flex gap-1"><input type="date" value="${semData.tp.fechaVencimiento || ''}" onchange="window.updateTPSubField('${m.id}', ${currentSemana}, 'fechaVencimiento', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full"><input type="time" value="${semData.tp.horaVencimiento || '23:59'}" onchange="window.updateTPSubField('${m.id}', ${currentSemana}, 'horaVencimiento', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-24"></div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sky-300 mb-1"><i class="fa-solid fa-bullseye mr-1"></i>Mi objetivo personal:</label>
+                                                <div class="flex gap-1"><input type="date" value="${semData.tp.objetivoPersonal || ''}" onchange="window.updateTPSubField('${m.id}', ${currentSemana}, 'objetivoPersonal', this.value)" class="bg-slate-950 border border-sky-800 rounded p-1.5 text-white w-full"><input type="time" value="${semData.tp.horaObjetivo || '18:00'}" onchange="window.updateTPSubField('${m.id}', ${currentSemana}, 'horaObjetivo', this.value)" class="bg-slate-950 border border-sky-800 rounded p-1.5 text-white w-24"></div>
+                                            </div>
+                                            <div>
                                                 <label class="block text-slate-400 mb-1">Día que lo realicé:</label>
                                                 <input type="date" value="${semData.tp.diaRealizado || ''}" onchange="window.updateTPSubField('${m.id}', ${currentSemana}, 'diaRealizado', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
                                             </div>
@@ -1108,8 +1244,12 @@
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
                                         <div>
-                                            <label class="block text-slate-400 mb-1">Fecha Límite / Vencimiento:</label>
-                                            <input type="date" value="${semData.autoevaluacion.fechaPlanteo || ''}" onchange="window.updateAutoSubField('${m.id}', ${currentSemana}, 'fechaPlanteo', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
+                                            <label class="block text-slate-400 mb-1">Vencimiento oficial:</label>
+                                            <div class="flex gap-1"><input type="date" value="${semData.autoevaluacion.fechaPlanteo || ''}" onchange="window.updateAutoSubField('${m.id}', ${currentSemana}, 'fechaPlanteo', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full"><input type="time" value="${semData.autoevaluacion.horaVencimiento || '23:59'}" onchange="window.updateAutoSubField('${m.id}', ${currentSemana}, 'horaVencimiento', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-24"></div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sky-300 mb-1"><i class="fa-solid fa-bullseye mr-1"></i>Mi objetivo personal:</label>
+                                            <div class="flex gap-1"><input type="date" value="${semData.autoevaluacion.objetivoPersonal || ''}" onchange="window.updateAutoSubField('${m.id}', ${currentSemana}, 'objetivoPersonal', this.value)" class="bg-slate-950 border border-sky-800 rounded p-1.5 text-white w-full"><input type="time" value="${semData.autoevaluacion.horaObjetivo || '18:00'}" onchange="window.updateAutoSubField('${m.id}', ${currentSemana}, 'horaObjetivo', this.value)" class="bg-slate-950 border border-sky-800 rounded p-1.5 text-white w-24"></div>
                                         </div>
                                         <div>
                                             <label class="block text-slate-400 mb-1">Día que la realicé:</label>
@@ -1194,7 +1334,7 @@
         window.updateExamenField = function(mId, examenKey, subField, val) {
             if (!ensurePeriodoEditable()) return;
             if (!appData[mId]) appData[mId] = {};
-            if (!appData[mId][examenKey]) appData[mId][examenKey] = { nota: '', fecha: '', hora: '' };
+            if (!appData[mId][examenKey]) appData[mId][examenKey] = { nota: '', fecha: '', hora: '', objetivoPersonal: '', horaObjetivo: '18:00' };
             appData[mId][examenKey][subField] = val;
             saveData(true);
         }
@@ -1214,9 +1354,9 @@
             }
             const matData = appData[currentGlobalMateria] || { parcial1: {}, parcial2: {}, recup: {}, semanas: {} };
 
-            const p1 = matData.parcial1 || { nota: '', fecha: '', hora: '' };
-            const p2 = matData.parcial2 || { nota: '', fecha: '', hora: '' };
-            const rec = matData.recup || { nota: '', fecha: '', hora: '' };
+            const p1 = matData.parcial1 || { nota: '', fecha: '', hora: '', objetivoPersonal: '', horaObjetivo: '18:00' };
+            const p2 = matData.parcial2 || { nota: '', fecha: '', hora: '', objetivoPersonal: '', horaObjetivo: '18:00' };
+            const rec = matData.recup || { nota: '', fecha: '', hora: '', objetivoPersonal: '', horaObjetivo: '18:00' };
 
             const panel = document.getElementById('global-materia-panel');
             panel.innerHTML = `
@@ -1239,6 +1379,10 @@
                                 <input type="text" value="${p1.hora || ''}" placeholder="Ej. 18:00 a 20:00 hs" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial1', 'hora', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
                             </div>
                             <div>
+                                <label class="block text-[10px] text-sky-300 uppercase"><i class="fa-solid fa-bullseye mr-1"></i>Mi objetivo de preparación:</label>
+                                <div class="flex gap-1"><input type="date" value="${p1.objetivoPersonal || ''}" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial1', 'objetivoPersonal', this.value)" class="bg-slate-950 border border-sky-800 rounded p-1.5 text-white w-full"><input type="time" value="${p1.horaObjetivo || '18:00'}" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial1', 'horaObjetivo', this.value)" class="bg-slate-950 border border-sky-800 rounded p-1.5 text-white w-24"></div>
+                            </div>
+                            <div>
                                 <label class="block text-[10px] text-slate-400 uppercase font-bold text-emerald-400">Nota:</label>
                                 <input type="text" value="${p1.nota || ''}" placeholder="-" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial1', 'nota', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white font-bold w-full">
                             </div>
@@ -1256,6 +1400,10 @@
                                 <input type="text" value="${p2.hora || ''}" placeholder="Ej. 18:00 a 20:00 hs" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial2', 'hora', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
                             </div>
                             <div>
+                                <label class="block text-[10px] text-sky-300 uppercase"><i class="fa-solid fa-bullseye mr-1"></i>Mi objetivo de preparación:</label>
+                                <div class="flex gap-1"><input type="date" value="${p2.objetivoPersonal || ''}" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial2', 'objetivoPersonal', this.value)" class="bg-slate-950 border border-sky-800 rounded p-1.5 text-white w-full"><input type="time" value="${p2.horaObjetivo || '18:00'}" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial2', 'horaObjetivo', this.value)" class="bg-slate-950 border border-sky-800 rounded p-1.5 text-white w-24"></div>
+                            </div>
+                            <div>
                                 <label class="block text-[10px] text-slate-400 uppercase font-bold text-emerald-400">Nota:</label>
                                 <input type="text" value="${p2.nota || ''}" placeholder="-" onchange="window.updateExamenField('${currentGlobalMateria}', 'parcial2', 'nota', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white font-bold w-full">
                             </div>
@@ -1271,6 +1419,10 @@
                             <div>
                                 <label class="block text-[10px] text-slate-400 uppercase">Franja Horaria:</label>
                                 <input type="text" value="${rec.hora || ''}" placeholder="Ej. 18:00 a 20:00 hs" onchange="window.updateExamenField('${currentGlobalMateria}', 'recup', 'hora', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1.5 text-white w-full">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-sky-300 uppercase"><i class="fa-solid fa-bullseye mr-1"></i>Mi objetivo de preparación:</label>
+                                <div class="flex gap-1"><input type="date" value="${rec.objetivoPersonal || ''}" onchange="window.updateExamenField('${currentGlobalMateria}', 'recup', 'objetivoPersonal', this.value)" class="bg-slate-950 border border-sky-800 rounded p-1.5 text-white w-full"><input type="time" value="${rec.horaObjetivo || '18:00'}" onchange="window.updateExamenField('${currentGlobalMateria}', 'recup', 'horaObjetivo', this.value)" class="bg-slate-950 border border-sky-800 rounded p-1.5 text-white w-24"></div>
                             </div>
                             <div>
                                 <label class="block text-[10px] text-slate-400 uppercase font-bold text-emerald-400">Nota:</label>
