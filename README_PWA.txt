@@ -18,3 +18,5 @@ Novedades v21:
 - Se eliminó la función destructiva “Restablecer datos”.
 - Restaurar respaldo crea antes una copia automática del estado actual y pide confirmación antes de reemplazar datos.
 - Respaldo completo mediante archivo JSON.
+
+Versión v22: historial seguro + actualización de HTML red-primero para evitar interfaces antiguas en caché.

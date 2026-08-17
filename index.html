@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="app-version" content="v22">
     <title>2026 FADENA Organizador - Licenciatura en Ciberdefensa (2do Cuatrimestre)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -99,8 +100,8 @@
                 <button onclick="importDataPrompt()" title="Restaurar respaldo" class="p-2.5 bg-slate-900/80 hover:bg-slate-800 text-sky-300 border border-slate-700 rounded-xl transition">
                     <i class="fa-solid fa-upload"></i>
                 </button>
-                <button onclick="switchTab('dashboard'); document.getElementById('periodo-selector')?.focus();" title="Historial de períodos" class="p-2.5 bg-slate-900/80 hover:bg-slate-800 text-violet-300 border border-slate-700 rounded-xl transition">
-                    <i class="fa-solid fa-clock-rotate-left"></i>
+                <button onclick="switchTab('dashboard'); document.getElementById('periodo-selector')?.focus();" title="Ver historial de períodos" class="px-3 py-2.5 bg-slate-900/80 hover:bg-slate-800 text-violet-300 border border-slate-700 rounded-xl transition text-xs font-semibold">
+                    <i class="fa-solid fa-box-archive mr-1"></i> Historial
                 </button>
             </div>
         </div>

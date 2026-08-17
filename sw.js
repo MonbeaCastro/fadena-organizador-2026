@@ -1,59 +1,73 @@
-const CACHE_NAME = 'fadena-organizador-v21';
-const APP_SHELL = [
-  './',
-  './index.html',
+const CACHE_NAME = 'fadena-organizador-v22';
+const STATIC_ASSETS = [
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png'
 ];
 
+async function cacheFreshIndex() {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const response = await fetch('./index.html?v=22', { cache: 'no-store' });
+    if (response && response.ok) await cache.put('./index.html', response.clone());
+  } catch (_) {
+    // Si estamos sin conexión durante la instalación, se usará una copia previa si existiera.
+  }
+}
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(STATIC_ASSETS);
+    await cacheFreshIndex();
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
-      .then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((key) => key.startsWith('fadena-organizador-') && key !== CACHE_NAME).map((key) => caches.delete(key)));
+    await cacheFreshIndex();
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
-  // Firestore/Auth y otros servicios externos siempre pasan por red.
+  // Firebase/Auth/CDN y otros orígenes siguen directamente por red.
   if (url.origin !== self.location.origin) return;
 
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', copy));
-          return response;
-        })
-        .catch(() => caches.match('./index.html'))
-    );
+  // Para documentos HTML/navegación: siempre red primero y sin caché HTTP.
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('/index.html')) {
+    event.respondWith((async () => {
+      try {
+        const request = new Request(event.request, { cache: 'no-store' });
+        const response = await fetch(request);
+        if (response && response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put('./index.html', response.clone());
+        }
+        return response;
+      } catch (_) {
+        return (await caches.match('./index.html')) || Response.error();
+      }
+    })());
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        if (response && response.status === 200) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        }
-        return response;
-      });
-    })
-  );
+  // Activos estáticos: caché primero, red como respaldo.
+  event.respondWith((async () => {
+    const cached = await caches.match(event.request);
+    if (cached) return cached;
+    const response = await fetch(event.request);
+    if (response && response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(event.request, response.clone());
+    }
+    return response;
+  })());
 });
