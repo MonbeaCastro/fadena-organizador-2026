@@ -226,7 +226,7 @@
                     <h3 class="text-lg font-bold flex items-center gap-2 text-sky-300">
                         <i class="fa-solid fa-shield-halved text-sky-400"></i> Materias, Profesores y Contacto Académico
                     </h3>
-                    <button onclick="window.addMateria()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-sky-700 hover:bg-sky-600 text-white border border-sky-500/40 transition">
+                    <button id="add-materia-btn" onclick="window.addMateria()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-sky-700 hover:bg-sky-600 text-white border border-sky-500/40 transition">
                         <i class="fa-solid fa-plus mr-1"></i> Agregar materia
                     </button>
                 </div>
@@ -627,42 +627,30 @@
         function periodoHasAcademicData(periodoId) {
             const p = rootData?.periodos?.[periodoId];
             if (!p) return false;
-            const prevPeriodoId = currentPeriodoId;
-            const prevMaterias = MATERIAS_CONFIG;
-            const prevData = appData;
-            try {
-                const materias = p.materias || [];
-                const data = p.data || {};
-                for (const m of materias) {
-                    const md = data[m.id];
-                    if (!md) continue;
-                    if (String(md.profesor || '').trim() || String(md.contacto || '').trim()) return true;
-                    for (const k of ['parcial1','parcial2','recup']) {
-                        const ex = md[k] || {};
-                        if (String(ex.nota || '').trim() || String(ex.fecha || '').trim() || String(ex.hora || '').trim() || String(ex.objetivoPersonal || '').trim() || String(ex.horaObjetivo || '').trim() && ex.horaObjetivo !== '18:00') return true;
-                    }
-                    const total = Number(data.__meta?.totalSemanas || DEFAULT_TOTAL_SEMANAS);
-                    const fechaInicio = data.__meta?.fechaInicio || p.fechaInicio || '';
-                    for (let s=1; s<=total; s++) {
-                        const sem = md.semanas?.[s];
-                        if (!sem) continue;
-                        const youtube = Array.isArray(sem.youtubeLinks) && sem.youtubeLinks.some(v => String(v || '').trim() !== '');
-                        const tp = sem.tp || {};
-                        const au = sem.autoevaluacion || {};
-                        const evento = sem.eventoSemana || {tipo:'normal', detalle:''};
-                        const esperado = getDefaultRangoFechasForStart(fechaInicio, s);
-                        const rangoModificado = String(sem.rangoFechas || '') && String(sem.rangoFechas || '') !== esperado;
-                        if (youtube || rangoModificado || sem.docentePusoActividad === false || (evento.tipo || 'normal') !== 'normal' || String(evento.detalle || '').trim() ||
-                            tp.existe === true || tp.evaluado === true || tp.entregado === true || String(tp.fechaPlanteo || '').trim() || String(tp.fechaVencimiento || '').trim() || String(tp.objetivoPersonal || '').trim() || String(tp.diaRealizado || '').trim() || String(tp.nota || '').trim() ||
-                            au.realizada === true || String(au.fechaPlanteo || '').trim() || String(au.objetivoPersonal || '').trim() || String(au.diaRealizado || '').trim() || String(au.nota || '').trim()) return true;
-                    }
+            const materias = p.materias || [];
+            const data = p.data || {};
+            const total = Number(data.__meta?.totalSemanas || DEFAULT_TOTAL_SEMANAS);
+            for (const m of materias) {
+                const md = data[m.id];
+                if (!md) continue;
+                if (String(md.profesor || '').trim() || String(md.contacto || '').trim()) return true;
+                for (const k of ['parcial1','parcial2','recup']) {
+                    const ex = md[k] || {};
+                    if (String(ex.nota || '').trim() || String(ex.fecha || '').trim() || String(ex.hora || '').trim() || String(ex.objetivoPersonal || '').trim()) return true;
                 }
-                return false;
-            } finally {
-                currentPeriodoId = prevPeriodoId;
-                MATERIAS_CONFIG = prevMaterias;
-                appData = prevData;
+                for (let s = 1; s <= total; s++) {
+                    const sem = md.semanas?.[s];
+                    if (!sem) continue;
+                    const youtube = Array.isArray(sem.youtubeLinks) && sem.youtubeLinks.some(v => String(v || '').trim() !== '');
+                    const tp = sem.tp || {};
+                    const au = sem.autoevaluacion || {};
+                    const evento = sem.eventoSemana || {tipo:'normal', detalle:''};
+                    if (youtube || sem.docentePusoActividad === false || (evento.tipo || 'normal') !== 'normal' || String(evento.detalle || '').trim() ||
+                        tp.existe === true || tp.evaluado === true || tp.entregado === true || String(tp.fechaPlanteo || '').trim() || String(tp.fechaVencimiento || '').trim() || String(tp.objetivoPersonal || '').trim() || String(tp.diaRealizado || '').trim() || String(tp.nota || '').trim() ||
+                        au.realizada === true || String(au.fechaPlanteo || '').trim() || String(au.objetivoPersonal || '').trim() || String(au.diaRealizado || '').trim() || String(au.nota || '').trim()) return true;
+                }
             }
+            return false;
         }
 
         window.returnPeriodoToPlanned = function() {
@@ -983,6 +971,9 @@ El período está vacío y solo contiene su estructura/materias sin datos acadé
 
         function renderDashboard() {
             updateDashboardStats();
+            const periodoEditable = ['activo','planificado'].includes(getPeriodoActual()?.estado || '');
+            const addMateriaBtn = document.getElementById('add-materia-btn');
+            if (addMateriaBtn) addMateriaBtn.classList.toggle('hidden', !periodoEditable);
             const container = document.getElementById('dashboard-materias-list');
             container.innerHTML = MATERIAS_CONFIG.map(m => {
                 const matData = appData[m.id] || { profesor: '', contacto: '', parcial1: {}, parcial2: {}, recup: {} };
@@ -994,10 +985,10 @@ El período está vacío y solo contiene su estructura/materias sin datos acadé
                                     <h4 class="font-bold text-sky-200 text-base">${m.nombre}</h4>
                                     <span class="text-[10px] bg-sky-950 text-sky-300 border border-sky-800 px-2 py-0.5 rounded-full font-semibold">${getPeriodoActual()?.cuatrimestre || ''}.º cuatrimestre</span>
                                 </div>
-                                <div class="flex gap-1">
+                                ${periodoEditable ? `<div class="flex gap-1">
                                     <button onclick="window.editMateria('${m.id}')" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 text-sky-300 hover:border-sky-500" title="Editar materia"><i class="fa-solid fa-pen"></i></button>
                                     <button onclick="window.removeMateria('${m.id}')" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 text-rose-300 hover:border-rose-500" title="Quitar materia si está vacía"><i class="fa-solid fa-trash-can"></i></button>
-                                </div>
+                                </div>` : '<span class="text-[10px] text-violet-300 border border-violet-800 bg-violet-950/40 px-2 py-1 rounded-full font-semibold">Solo consulta</span>'}
                             </div>
                             <p class="text-xs text-slate-400 mt-1 mb-3">${m.descripcion}</p>
                             
@@ -1005,11 +996,11 @@ El período está vacío y solo contiene su estructura/materias sin datos acadé
                             <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
                                 <div>
                                     <label class="block text-[10px] uppercase text-slate-400 font-bold mb-0.5"><i class="fa-solid fa-chalkboard-user mr-1 text-sky-400"></i> Profesor:</label>
-                                    <input type="text" value="${matData.profesor || ''}" placeholder="Nombre del docente..." onchange="window.updateDocenteInfo('${m.id}', 'profesor', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1 text-white w-full">
+                                    <input type="text" value="${matData.profesor || ''}" placeholder="Nombre del docente..." onchange="window.updateDocenteInfo('${m.id}', 'profesor', this.value)" ${periodoEditable ? '' : 'disabled'} class="bg-slate-950 border border-slate-700 rounded p-1 text-white w-full disabled:opacity-60 disabled:cursor-not-allowed">
                                 </div>
                                 <div>
                                     <label class="block text-[10px] uppercase text-slate-400 font-bold mb-0.5"><i class="fa-solid fa-envelope mr-1 text-sky-400"></i> Email / Contacto Académico:</label>
-                                    <input type="text" value="${matData.contacto || ''}" placeholder="docente@fadena.edu.ar / aula..." onchange="window.updateDocenteInfo('${m.id}', 'contacto', this.value)" class="bg-slate-950 border border-slate-700 rounded p-1 text-white w-full font-mono">
+                                    <input type="text" value="${matData.contacto || ''}" placeholder="docente@fadena.edu.ar / aula..." onchange="window.updateDocenteInfo('${m.id}', 'contacto', this.value)" ${periodoEditable ? '' : 'disabled'} class="bg-slate-950 border border-slate-700 rounded p-1 text-white w-full font-mono disabled:opacity-60 disabled:cursor-not-allowed">
                                 </div>
                             </div>
                         </div>
@@ -2080,3 +2071,4 @@ El período está vacío y solo contiene su estructura/materias sin datos acadé
 
 </body>
 </html>
+```eof
